@@ -48,7 +48,8 @@ public class TemplateDemo {
 
         generator.render(data);
 
-        generator.save(Files.newOutputStream(Paths.get("D:/resume.docx")));
+        String home = System.getProperty("user.home");
+        generator.save(Files.newOutputStream(Paths.get(home + "/Documents/resume.docx")));
         log.debug("生成成功");
     }
 }
