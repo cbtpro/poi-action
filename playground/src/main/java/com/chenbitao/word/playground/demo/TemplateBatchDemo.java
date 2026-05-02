@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicReference;
 @Slf4j
 public class TemplateBatchDemo {
 
-    private static final int DEFAULT_COUNT = 1000;
+    private static final int DEFAULT_COUNT = 320000;
     private static final int DEFAULT_THREADS = Math.max(1, Runtime.getRuntime().availableProcessors());
     private static final int PROGRESS_INTERVAL_SECONDS = 5;
     private static final Path OUTPUT_DIR = Paths.get("target", "out");
