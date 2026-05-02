@@ -124,7 +124,7 @@ public class TemplateWordGenerator {
     }
 
     private void setCellText(XWPFTableCell cell, String text) {
-        while (cell.getParagraphs().size() > 0) {
+        while (!cell.getParagraphs().isEmpty()) {
             cell.removeParagraph(0);
         }
 
@@ -180,8 +180,7 @@ public class TemplateWordGenerator {
                 if (isLoopCell(templateCell, listName)) {
                     setCellText(newCell, renderLoopText(templateCell.getText(), listName, item));
                 } else {
-                    setVerticalMerge(newCell, offset == 0);
-                    setCellText(newCell, offset == 0 ? templateCell.getText() : "");
+                    renderStaticCell(templateCell, newCell, offset);
                 }
             }
 
@@ -189,6 +188,31 @@ public class TemplateWordGenerator {
         }
 
         table.removeRow(rowIndex);
+    }
+
+    private void renderStaticCell(XWPFTableCell templateCell, XWPFTableCell newCell, int offset) {
+        STMerge.Enum templateMerge = getVerticalMerge(templateCell);
+        if (STMerge.CONTINUE.equals(templateMerge)) {
+            setCellText(newCell, "");
+            return;
+        }
+
+        String text = offset == 0 ? templateCell.getText() : "";
+        if (templateMerge != null || templateCell.getText().length() > 0) {
+            setVerticalMerge(newCell, offset == 0);
+        }
+        setCellText(newCell, text);
+    }
+
+    private STMerge.Enum getVerticalMerge(XWPFTableCell cell) {
+        if (!cell.getCTTc().isSetTcPr()) {
+            return null;
+        }
+        CTTcPr tcPr = cell.getCTTc().getTcPr();
+        if (!tcPr.isSetVMerge()) {
+            return null;
+        }
+        return tcPr.getVMerge().getVal();
     }
 
     private void setVerticalMerge(XWPFTableCell cell, boolean restart) {
@@ -200,14 +224,9 @@ public class TemplateWordGenerator {
     }
 
     private void processTable(XWPFTable table, Map<String, Object> data) {
-        List<XWPFTableRow> rows = table.getRows();
-
-        for (int i = 0; i < rows.size(); i++) {
-            XWPFTableRow row = rows.get(i);
-
-            if (processLoopRowIfPresent(table, i, row, data)) {
-                break;
-            }
+        for (int i = 0; i < table.getRows().size(); i++) {
+            XWPFTableRow row = table.getRow(i);
+            processLoopRowIfPresent(table, i, row, data);
         }
     }
 
@@ -255,10 +274,6 @@ public class TemplateWordGenerator {
         return safeCastToListOfMaps(value);
     }
 
-    /**
-     * 类型安全的转换，避免未检查警告
-     */
-    @SuppressWarnings("unchecked")
     private List<Map<String, Object>> safeCastToListOfMaps(Object value) {
         return (List<Map<String, Object>>) value;
     }

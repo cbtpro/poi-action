@@ -1,10 +1,15 @@
 package com.chenbitao.word.docx;
 
+import com.chenbitao.word.constant.BlankConstants;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.apache.poi.xwpf.usermodel.XWPFTable;
+import org.apache.poi.xwpf.usermodel.XWPFTableCell;
 import org.apache.poi.xwpf.usermodel.XWPFTableRow;
 import org.junit.Test;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTTcPr;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTVMerge;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.STMerge;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -92,6 +97,112 @@ public class TemplateWordGeneratorTest {
                 assertEquals("在职", renderedTable.getRow(1).getCell(1).getText());
                 assertEquals("硕士", renderedTable.getRow(1).getCell(2).getText());
                 assertEquals("软件学院软件工程", renderedTable.getRow(1).getCell(3).getText());
+            }
+        }
+    }
+
+    @Test
+    public void renderSupportsMultipleLoopRowsInSameTable() throws Exception {
+        try (XWPFDocument document = new XWPFDocument();
+             ByteArrayOutputStream template = new ByteArrayOutputStream()) {
+            XWPFTable table = document.createTable(2, 5);
+            XWPFTableRow educationRow = table.getRow(0);
+            educationRow.getCell(0).setText("学历学位");
+            educationRow.getCell(1).setText("${education.type}");
+            educationRow.getCell(2).setText("${education.degree}");
+            educationRow.getCell(3).setText("${education.department}${education.major}");
+            educationRow.getCell(4).setText("备注");
+
+            XWPFTableRow relationRow = table.getRow(1);
+            relationRow.getCell(0).setText("${familyAndSocialRelations.appellation}");
+            relationRow.getCell(1).setText("${familyAndSocialRelations.name}");
+            relationRow.getCell(2).setText("${familyAndSocialRelations.age}");
+            relationRow.getCell(3).setText("${familyAndSocialRelations.political}");
+            relationRow.getCell(4).setText("${familyAndSocialRelations.workUnit}");
+            document.write(template);
+
+            TemplateWordGenerator generator =
+                    new TemplateWordGenerator(new ByteArrayInputStream(template.toByteArray()));
+            Map<String, Object> data = new HashMap<>();
+            data.put("education", Arrays.asList(
+                    education("全日制", "学士", "计算机科学", "软件工程"),
+                    education("在职", "硕士", "软件学院", "软件工程")
+            ));
+            data.put("familyAndSocialRelations", Arrays.asList(
+                    relation("父亲", "张父", "56", "党员", BlankConstants.EMPTY),
+                    relation("母亲", "张母", "55", "群众", BlankConstants.DASH)
+            ));
+
+            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            generator.render(data);
+            generator.save(output);
+
+            try (XWPFDocument rendered =
+                         new XWPFDocument(new ByteArrayInputStream(output.toByteArray()))) {
+                XWPFTable renderedTable = rendered.getTables().get(0);
+                assertEquals(4, renderedTable.getRows().size());
+                assertEquals("学历学位", renderedTable.getRow(0).getCell(0).getText());
+                assertEquals("全日制", renderedTable.getRow(0).getCell(1).getText());
+                assertEquals("", renderedTable.getRow(1).getCell(0).getText());
+                assertEquals("在职", renderedTable.getRow(1).getCell(1).getText());
+                assertEquals("父亲", renderedTable.getRow(2).getCell(0).getText());
+                assertEquals("张父", renderedTable.getRow(2).getCell(1).getText());
+                assertEquals("56", renderedTable.getRow(2).getCell(2).getText());
+                assertEquals("党员", renderedTable.getRow(2).getCell(3).getText());
+                assertEquals(BlankConstants.EMPTY, renderedTable.getRow(2).getCell(4).getText());
+                assertEquals("母亲", renderedTable.getRow(3).getCell(0).getText());
+                assertEquals("张母", renderedTable.getRow(3).getCell(1).getText());
+                assertEquals("55", renderedTable.getRow(3).getCell(2).getText());
+                assertEquals("群众", renderedTable.getRow(3).getCell(3).getText());
+                assertEquals(BlankConstants.DASH, renderedTable.getRow(3).getCell(4).getText());
+            }
+        }
+    }
+
+    @Test
+    public void renderKeepsTemplateVerticalMergeForLoopRows() throws Exception {
+        try (XWPFDocument document = new XWPFDocument();
+             ByteArrayOutputStream template = new ByteArrayOutputStream()) {
+            XWPFTable table = document.createTable(2, 6);
+            XWPFTableRow headerRow = table.getRow(0);
+            setVerticalMerge(headerRow.getCell(0), STMerge.RESTART);
+            headerRow.getCell(0).setText("家庭主要成员及重要社会关系");
+            headerRow.getCell(1).setText("称谓");
+            headerRow.getCell(2).setText("姓名");
+            headerRow.getCell(3).setText("年龄");
+            headerRow.getCell(4).setText("政治面貌");
+            headerRow.getCell(5).setText("工作单位及职务");
+
+            XWPFTableRow relationRow = table.getRow(1);
+            setVerticalMerge(relationRow.getCell(0), STMerge.CONTINUE);
+            relationRow.getCell(1).setText("${familyAndSocialRelations.appellation}");
+            relationRow.getCell(2).setText("${familyAndSocialRelations.name}");
+            relationRow.getCell(3).setText("${familyAndSocialRelations.age}");
+            relationRow.getCell(4).setText("${familyAndSocialRelations.political}");
+            relationRow.getCell(5).setText("${familyAndSocialRelations.workUnit}");
+            document.write(template);
+
+            TemplateWordGenerator generator =
+                    new TemplateWordGenerator(new ByteArrayInputStream(template.toByteArray()));
+            Map<String, Object> data = new HashMap<>();
+            data.put("familyAndSocialRelations", Arrays.asList(
+                    relation("父亲", "张父", "56", "党员", BlankConstants.EMPTY),
+                    relation("母亲", "张母", "55", "群众", BlankConstants.DASH)
+            ));
+
+            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            generator.render(data);
+            generator.save(output);
+
+            try (XWPFDocument rendered =
+                         new XWPFDocument(new ByteArrayInputStream(output.toByteArray()))) {
+                XWPFTable renderedTable = rendered.getTables().get(0);
+                assertEquals(3, renderedTable.getRows().size());
+                assertEquals(STMerge.RESTART, verticalMerge(renderedTable.getRow(0).getCell(0)));
+                assertEquals(STMerge.CONTINUE, verticalMerge(renderedTable.getRow(1).getCell(0)));
+                assertEquals(STMerge.CONTINUE, verticalMerge(renderedTable.getRow(2).getCell(0)));
+                assertEquals("父亲", renderedTable.getRow(1).getCell(1).getText());
+                assertEquals("母亲", renderedTable.getRow(2).getCell(1).getText());
             }
         }
     }
@@ -201,13 +312,29 @@ public class TemplateWordGeneratorTest {
         data.put("age", "18");
         data.put("birthday", "2008-01");
         data.put("firstJobDate", "2021-07");
+        data.put("nationality", "汉族");
+        data.put("nativePlace", "浙江杭州");
+        data.put("birthPlace", "浙江杭州");
+        data.put("healthCondition", "健康");
+        data.put("joinPartyDate", BlankConstants.DASH);
+        data.put("majorExpertise", BlankConstants.NONE);
         data.put("qualificationName", "高级工程师");
+        data.put("currentPosition", BlankConstants.DASH);
+        data.put("proposedPosition", BlankConstants.DASH);
+        data.put("proposedRemovedPosition", BlankConstants.DASH);
         data.put("annualAssessmentResult", Arrays.asList(
                 "2023年度：2等（卓越)",
                 "2022年度：2等（卓越）",
                 "2021年度：3等（合格）"
         ));
+        data.put("appointmentRemovalReason", BlankConstants.NONE);
+        data.put("rewardPunishmentRecord", BlankConstants.NONE);
+        data.put("reportingUnit", BlankConstants.DASH);
         data.put("workExperience", "2020.01 - 2021.06  ABC公司  高级开发工程师\n2021.07 - 2023.12  XYZ公司  技术总监");
+        data.put("familyAndSocialRelations", Arrays.asList(
+                relation("父亲", "张父", "56", "群众", BlankConstants.DASH),
+                relation("母亲", "张母", "55", "群众", BlankConstants.DASH)
+        ));
 
         data.put("education", Arrays.asList(
                 education("全日制", "学士", "计算机科学", "软件工程"),
@@ -265,6 +392,33 @@ public class TemplateWordGeneratorTest {
         education.put("department", department);
         education.put("major", major);
         return education;
+    }
+
+    private static Map<String, Object> relation(String appellation, String name,
+                                                String age, String political,
+                                                String workUnit) {
+        Map<String, Object> relation = new HashMap<>();
+        relation.put("appellation", appellation);
+        relation.put("name", name);
+        relation.put("age", age);
+        relation.put("political", political);
+        relation.put("workUnit", workUnit);
+        return relation;
+    }
+
+    private static void setVerticalMerge(XWPFTableCell cell, STMerge.Enum value) {
+        CTTcPr tcPr = cell.getCTTc().isSetTcPr()
+                ? cell.getCTTc().getTcPr()
+                : cell.getCTTc().addNewTcPr();
+        CTVMerge vMerge = tcPr.isSetVMerge() ? tcPr.getVMerge() : tcPr.addNewVMerge();
+        vMerge.setVal(value);
+    }
+
+    private static STMerge.Enum verticalMerge(XWPFTableCell cell) {
+        if (!cell.getCTTc().isSetTcPr() || !cell.getCTTc().getTcPr().isSetVMerge()) {
+            return null;
+        }
+        return cell.getCTTc().getTcPr().getVMerge().getVal();
     }
 
     private static String allText(XWPFDocument document) {
