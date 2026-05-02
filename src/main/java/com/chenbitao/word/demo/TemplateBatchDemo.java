@@ -39,12 +39,14 @@ public class TemplateBatchDemo {
         generate(count, threads);
 
         long cost = System.currentTimeMillis() - start;
-        log.info("批量生成完成：{} 个文档，线程数：{}，输出目录：{}，耗时：{} ms，平均：{} ms/个",
+        double averageMillis = count == 0 ? 0D : cost * 1.0D / count;
+        log.info("批量生成完成：{} 个文档，线程数：{}，输出目录：{}，耗时：{} ms（{} 秒），平均：{} ms/个",
                 count,
                 threads,
                 OUTPUT_DIR.toAbsolutePath(),
                 cost,
-                count == 0 ? 0 : cost / count);
+                String.format("%.3f", cost / 1000.0D),
+                String.format("%.3f", averageMillis));
     }
 
     /**
