@@ -6,12 +6,25 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.Arrays;
 
+/**
+ * Word文档生成演示主类
+ * 演示如何使用WordBuilder和WordGeneratorFactory来生成简历文档
+ */
 @Slf4j
 public class DemoMain {
 
+    /**
+     * 程序入口方法
+     * 演示完整的简历文档生成流程：
+     * 1. 构造简历数据
+     * 2. 创建Word文档建造者
+     * 3. 使用流式API构建文档内容
+     * 4. 保存生成的文档
+     *
+     * @param args 命令行参数（未使用）
+     */
     public static void main(String[] args) {
-// 1️⃣ 构造数据
-        Resume resume = new Resume();
+        Resume resume = Resume.builder().build();
         resume.name = "张三";
         resume.phone = "13800000000";
         resume.email = "zhangsan@example.com";
@@ -52,7 +65,7 @@ public class DemoMain {
                 .paragraphList(resume.skills)
 
                 .table(3, 2) // 简单表格（后面可升级）
-                .build("D:/test.docx");
+                .build(System.getProperty("user.dir") + "/target/test.docx");
 
         log.info("生成成功！");
     }

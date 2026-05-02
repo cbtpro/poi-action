@@ -27,8 +27,25 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+/**
+ * TemplateWordGenerator模板生成器测试
+ * 全面测试TemplateWordGenerator的功能，包括：
+ * - 文本占位符替换
+ * - 表格循环填充（单元格内循环和行循环）
+ * - 图片占位符替换
+ * - 嵌套对象属性访问
+ * - 列表和数组值处理
+ * - 垂直合并单元格保持
+ */
 public class TemplateWordGeneratorTest {
 
+    /**
+     * 测试渲染支持单元格循环和行循环
+     * 验证模板生成器能够正确处理${list.field}格式的循环占位符，
+     * 包括在单元格内的循环填充和通过新增行进行循环填充
+     *
+     * @throws Exception 如果测试过程中发生错误
+     */
     @Test
     public void renderSupportsCellLoopAndRowLoop() throws Exception {
         byte[] template = createTemplate();
