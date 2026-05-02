@@ -29,10 +29,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up JDK 8
+      - name: Set up JDK 8 on Linux/Windows
+        if: runner.os != 'macos'
         uses: actions/setup-java@v4
         with:
           distribution: temurin
+          java-version: '8'
+
+      - name: Set up JDK 8 on macOS
+        if: runner.os == 'macos'
+        uses: actions/setup-java@v4
+        with:
+          distribution: zulu
           java-version: '8'
 
       - name: Cache Maven local repository
