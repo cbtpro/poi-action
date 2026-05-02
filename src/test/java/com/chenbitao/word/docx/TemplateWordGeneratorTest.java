@@ -11,9 +11,13 @@ import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTTcPr;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTVMerge;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.STMerge;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.InputStream;
+import java.util.Base64;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -21,6 +25,7 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class TemplateWordGeneratorTest {
 
@@ -301,6 +306,106 @@ public class TemplateWordGeneratorTest {
     }
 
     @Test
+    public void renderSupportsPicturePlaceholderFromMultipleSources() throws Exception {
+        byte[] bytesImage = pngBytes(0x3366CC);
+        byte[] base64Image = pngBytes(0xCC6633);
+        byte[] fileImage = pngBytes(0x33CC66);
+        byte[] urlImage = pngBytes(0x6633CC);
+        File imageFile = File.createTempFile("template-photo", ".png");
+        java.nio.file.Files.write(imageFile.toPath(), fileImage);
+        imageFile.deleteOnExit();
+        File urlFile = File.createTempFile("template-photo-url", ".png");
+        java.nio.file.Files.write(urlFile.toPath(), urlImage);
+        urlFile.deleteOnExit();
+
+        try (XWPFDocument document = new XWPFDocument();
+             ByteArrayOutputStream template = new ByteArrayOutputStream()) {
+            document.createParagraph().createRun().setText("${photoBytes}");
+            document.createParagraph().createRun().setText("${photoBase64}");
+            document.createParagraph().createRun().setText("${photoFile}");
+            document.createParagraph().createRun().setText("${photoUrl}");
+            document.write(template);
+
+            TemplateWordGenerator generator =
+                    new TemplateWordGenerator(new ByteArrayInputStream(template.toByteArray()));
+            Map<String, Object> data = new HashMap<>();
+            data.put("photoBytes", bytesImage);
+            data.put("photoBase64", "data:image/png;base64," + Base64.getEncoder().encodeToString(base64Image));
+            data.put("photoFile", imageFile.toPath());
+            data.put("photoUrl", urlFile.toURI().toURL());
+
+            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            generator.render(data);
+            generator.save(output);
+
+            try (XWPFDocument rendered =
+                         new XWPFDocument(new ByteArrayInputStream(output.toByteArray()))) {
+                assertEquals(4, rendered.getAllPictures().size());
+                assertFalse(allText(rendered).contains("${photo"));
+            }
+        }
+    }
+
+    @Test
+    public void renderConvertsImageIoReadablePictureToWordPicture() throws Exception {
+        byte[] imageBytes = bmpBytes();
+        try (XWPFDocument document = new XWPFDocument();
+             ByteArrayOutputStream template = new ByteArrayOutputStream()) {
+            document.createParagraph().createRun().setText("${photo}");
+            document.write(template);
+
+            TemplateWordGenerator generator =
+                    new TemplateWordGenerator(new ByteArrayInputStream(template.toByteArray()));
+            Map<String, Object> data = new HashMap<>();
+            data.put("photo", TemplateWordGenerator.picture(
+                    Base64.getEncoder().encodeToString(imageBytes),
+                    org.apache.poi.util.Units.toEMU(20),
+                    org.apache.poi.util.Units.toEMU(30)));
+
+            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            generator.render(data);
+            generator.save(output);
+
+            try (XWPFDocument rendered =
+                         new XWPFDocument(new ByteArrayInputStream(output.toByteArray()))) {
+                assertEquals(1, rendered.getAllPictures().size());
+                assertTrue(rendered.getAllPictures().get(0).getData().length > 0);
+                String xml = rendered.getDocument().xmlText();
+                assertTrue(xml.contains("cx=\"" + org.apache.poi.util.Units.toEMU(20) + "\""));
+                assertTrue(xml.contains("cy=\"" + org.apache.poi.util.Units.toEMU(30) + "\""));
+            }
+        }
+    }
+
+    @Test
+    public void renderClearsPicturePlaceholderWhenValueIsBlank() throws Exception {
+        try (XWPFDocument document = new XWPFDocument();
+             ByteArrayOutputStream template = new ByteArrayOutputStream()) {
+            document.createParagraph().createRun().setText("${photoNull}");
+            document.createParagraph().createRun().setText("${photoEmpty}");
+            document.write(template);
+
+            TemplateWordGenerator generator =
+                    new TemplateWordGenerator(new ByteArrayInputStream(template.toByteArray()));
+            Map<String, Object> data = new HashMap<>();
+            data.put("photoNull", null);
+            data.put("photoEmpty", "");
+
+            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            generator.render(data);
+            generator.save(output);
+
+            try (XWPFDocument rendered =
+                         new XWPFDocument(new ByteArrayInputStream(output.toByteArray()))) {
+                assertEquals("", rendered.getParagraphArray(0).getText());
+                assertEquals("", rendered.getParagraphArray(1).getText());
+                assertEquals(0, rendered.getAllPictures().size());
+                assertFalse(allText(rendered).contains("${photo"));
+            }
+        }
+    }
+
+    @Test
     public void renderRealTemplateWithoutLeavingPlaceholders() throws Exception {
         InputStream template = TemplateWordGeneratorTest.class.getResourceAsStream("/template.docx");
         assertNotNull(template);
@@ -340,6 +445,10 @@ public class TemplateWordGeneratorTest {
                 education("全日制", "学士", "计算机科学", "软件工程"),
                 education("在职", "硕士", "软件学院", "软件工程")
         ));
+        data.put("photo", TemplateWordGenerator.picture(
+                pngBytes(),
+                org.apache.poi.util.Units.toEMU(25),
+                org.apache.poi.util.Units.toEMU(35)));
 
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         generator.render(data);
@@ -352,6 +461,27 @@ public class TemplateWordGeneratorTest {
             assertFalse(allText(rendered).contains("2008-01\n\n18"));
             assertFalse(allText(rendered).contains("2008-01\r\n\r\n18"));
             assertFalse(allText(rendered).contains("[2023年度"));
+            assertEquals(1, rendered.getAllPictures().size());
+        }
+    }
+
+    @Test
+    public void renderRealTemplateClearsPhotoWhenValueIsNull() throws Exception {
+        InputStream template = TemplateWordGeneratorTest.class.getResourceAsStream("/template.docx");
+        assertNotNull(template);
+
+        TemplateWordGenerator generator = new TemplateWordGenerator(template);
+        Map<String, Object> data = new HashMap<>();
+        data.put("photo", null);
+
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        generator.render(data);
+        generator.save(output);
+
+        try (XWPFDocument rendered =
+                     new XWPFDocument(new ByteArrayInputStream(output.toByteArray()))) {
+            assertFalse(allText(rendered).contains("${photo}"));
+            assertEquals(0, rendered.getAllPictures().size());
         }
     }
 
@@ -419,6 +549,30 @@ public class TemplateWordGeneratorTest {
             return null;
         }
         return cell.getCTTc().getTcPr().getVMerge().getVal();
+    }
+
+    private static byte[] pngBytes() throws Exception {
+        return pngBytes(0x3366CC);
+    }
+
+    private static byte[] pngBytes(int rgb) throws Exception {
+        return imageBytes("png", rgb);
+    }
+
+    private static byte[] bmpBytes() throws Exception {
+        return imageBytes("bmp", 0x3366CC);
+    }
+
+    private static byte[] imageBytes(String formatName, int rgb) throws Exception {
+        BufferedImage image = new BufferedImage(10, 12, BufferedImage.TYPE_INT_RGB);
+        for (int x = 0; x < image.getWidth(); x++) {
+            for (int y = 0; y < image.getHeight(); y++) {
+                image.setRGB(x, y, rgb);
+            }
+        }
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        ImageIO.write(image, formatName, output);
+        return output.toByteArray();
     }
 
     private static String allText(XWPFDocument document) {

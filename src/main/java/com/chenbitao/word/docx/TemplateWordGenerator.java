@@ -7,10 +7,21 @@ import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTTcPr;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTVMerge;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.STMerge;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Array;
+import java.net.URI;
+import java.net.URL;
+import java.net.URLConnection;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -22,6 +33,26 @@ public class TemplateWordGenerator {
     private static final Pattern LOOP_PLACEHOLDER_PATTERN = Pattern.compile("\\$\\{(\\w+)\\.\\w+}");
 
     private XWPFDocument document;
+
+    public static Picture picture(Object source) {
+        return new Picture(source, null, null);
+    }
+
+    public static Picture picture(Object source, int widthEmu, int heightEmu) {
+        return new Picture(source, widthEmu, heightEmu);
+    }
+
+    public static class Picture {
+        private final Object source;
+        private final Integer widthEmu;
+        private final Integer heightEmu;
+
+        private Picture(Object source, Integer widthEmu, Integer heightEmu) {
+            this.source = source;
+            this.widthEmu = widthEmu;
+            this.heightEmu = heightEmu;
+        }
+    }
 
     public TemplateWordGenerator(InputStream template) {
         try {
@@ -54,11 +85,11 @@ public class TemplateWordGenerator {
             return;
         }
 
-        String imageKey = singleImagePlaceholder(text, data);
+        Picture picture = singleImagePlaceholder(text, data);
         clearRuns(runs);
         XWPFRun firstRun = runs.get(0);
-        if (imageKey != null) {
-            addPicture(firstRun, imageKey, (InputStream) resolveValue(imageKey, data));
+        if (picture != null) {
+            addPicture(firstRun, picture);
             return;
         }
 
@@ -314,7 +345,7 @@ public class TemplateWordGenerator {
         while (matcher.find()) {
             String key = matcher.group(1);
             Object value = resolveValue(key, data);
-            String replacement = value == null ? matcher.group(0) : formatValue(value);
+            String replacement = value == null && !containsValue(key, data) ? matcher.group(0) : formatValue(value);
             matcher.appendReplacement(result, Matcher.quoteReplacement(replacement));
         }
         matcher.appendTail(result);
@@ -322,6 +353,10 @@ public class TemplateWordGenerator {
     }
 
     private String formatValue(Object value) {
+        if (value == null) {
+            return "";
+        }
+
         if (value instanceof Iterable) {
             StringBuilder text = new StringBuilder();
             for (Object item : (Iterable<?>) value) {
@@ -369,7 +404,28 @@ public class TemplateWordGenerator {
         return current;
     }
 
-    private String singleImagePlaceholder(String text, Map<String, Object> data) {
+    @SuppressWarnings("unchecked")
+    private boolean containsValue(String key, Map<String, Object> data) {
+        if (data.containsKey(key)) {
+            return true;
+        }
+
+        String[] parts = key.split("\\.");
+        Object current = data;
+        for (String part : parts) {
+            if (!(current instanceof Map)) {
+                return false;
+            }
+            Map<String, Object> currentMap = (Map<String, Object>) current;
+            if (!currentMap.containsKey(part)) {
+                return false;
+            }
+            current = currentMap.get(part);
+        }
+        return true;
+    }
+
+    private Picture singleImagePlaceholder(String text, Map<String, Object> data) {
         Matcher matcher = PLACEHOLDER_PATTERN.matcher(text.trim());
         if (!matcher.matches()) {
             return null;
@@ -377,7 +433,35 @@ public class TemplateWordGenerator {
 
         String key = matcher.group(1);
         Object value = resolveValue(key, data);
-        return value instanceof InputStream ? key : null;
+        if (value instanceof Picture) {
+            return (Picture) value;
+        }
+        if (isPictureValue(value)) {
+            return picture(value);
+        }
+        return null;
+    }
+
+    private boolean isPictureValue(Object value) {
+        if (value instanceof InputStream || value instanceof byte[]
+                || value instanceof File || value instanceof Path
+                || value instanceof URL || value instanceof URI) {
+            return true;
+        }
+
+        if (!(value instanceof String)) {
+            return false;
+        }
+
+        String text = ((String) value).trim();
+        if (text.isEmpty()) {
+            return false;
+        }
+        return text.startsWith("data:image/")
+                || text.startsWith("http://")
+                || text.startsWith("https://")
+                || isBase64Image(text)
+                || Files.isRegularFile(new File(text).toPath());
     }
 
     private void clearRuns(List<XWPFRun> runs) {
@@ -399,15 +483,208 @@ public class TemplateWordGenerator {
         }
     }
 
-    private void addPicture(XWPFRun run, String key, InputStream inputStream) {
+    private boolean isBase64Image(String text) {
         try {
-            run.addPicture(inputStream,
-                    Document.PICTURE_TYPE_PNG,
-                    key,
-                    Units.toEMU(80),
-                    Units.toEMU(80));
+            byte[] bytes = Base64.getDecoder().decode(text);
+            return detectPictureType(bytes) != null || ImageIO.read(new ByteArrayInputStream(bytes)) != null;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private void addPicture(XWPFRun run, Picture picture) {
+        try {
+            PictureData pictureData = readPictureData(picture.source);
+            int[] size = pictureSize(picture, pictureData);
+            run.addPicture(new ByteArrayInputStream(pictureData.bytes),
+                    pictureData.pictureType,
+                    pictureData.fileName,
+                    size[0],
+                    size[1]);
         } catch (Exception e) {
             throw new WordException("图片替换失败", e);
+        }
+    }
+
+    private PictureData readPictureData(Object source) throws Exception {
+        byte[] bytes = readPictureBytes(source);
+        Integer pictureType = detectPictureType(bytes);
+        BufferedImage image = ImageIO.read(new ByteArrayInputStream(bytes));
+        if (pictureType != null) {
+            return new PictureData(bytes, pictureType, fileName(source, pictureType), imageWidthEmu(image), imageHeightEmu(image));
+        }
+
+        if (image == null) {
+            throw new WordException("不支持的图片格式", null);
+        }
+
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        ImageIO.write(image, "png", output);
+        return new PictureData(output.toByteArray(), Document.PICTURE_TYPE_PNG, fileName(source, Document.PICTURE_TYPE_PNG),
+                imageWidthEmu(image), imageHeightEmu(image));
+    }
+
+    private int[] pictureSize(Picture picture, PictureData pictureData) {
+        Integer width = picture.widthEmu == null ? pictureData.widthEmu : picture.widthEmu;
+        Integer height = picture.heightEmu == null ? pictureData.heightEmu : picture.heightEmu;
+        if (width == null || height == null) {
+            throw new WordException("无法识别图片尺寸，请在业务数据中指定图片宽高", null);
+        }
+        return new int[]{width, height};
+    }
+
+    private Integer imageWidthEmu(BufferedImage image) {
+        return image == null ? null : Units.pixelToEMU(image.getWidth());
+    }
+
+    private Integer imageHeightEmu(BufferedImage image) {
+        return image == null ? null : Units.pixelToEMU(image.getHeight());
+    }
+
+    private byte[] readPictureBytes(Object source) throws Exception {
+        if (source instanceof Picture) {
+            return readPictureBytes(((Picture) source).source);
+        }
+        if (source instanceof byte[]) {
+            return (byte[]) source;
+        }
+        if (source instanceof InputStream) {
+            return readAll((InputStream) source);
+        }
+        if (source instanceof File) {
+            return Files.readAllBytes(((File) source).toPath());
+        }
+        if (source instanceof Path) {
+            return Files.readAllBytes((Path) source);
+        }
+        if (source instanceof URL) {
+            return readFromUrl((URL) source);
+        }
+        if (source instanceof URI) {
+            return readFromUrl(((URI) source).toURL());
+        }
+        if (source instanceof String) {
+            return readPictureBytes((String) source);
+        }
+
+        throw new WordException("不支持的图片输入类型：" + source.getClass().getName(), null);
+    }
+
+    private byte[] readPictureBytes(String source) throws Exception {
+        String text = source.trim();
+        if (text.startsWith("data:image/")) {
+            int commaIndex = text.indexOf(',');
+            if (commaIndex < 0) {
+                throw new WordException("无效的 base64 图片", null);
+            }
+            return Base64.getDecoder().decode(text.substring(commaIndex + 1));
+        }
+        if (text.startsWith("http://") || text.startsWith("https://")) {
+            return readFromUrl(new URL(text));
+        }
+
+        File file = new File(text);
+        if (file.exists()) {
+            return Files.readAllBytes(file.toPath());
+        }
+
+        return Base64.getDecoder().decode(text);
+    }
+
+    private byte[] readFromUrl(URL url) throws Exception {
+        URLConnection connection = url.openConnection();
+        connection.setConnectTimeout(10000);
+        connection.setReadTimeout(10000);
+        try (InputStream inputStream = connection.getInputStream()) {
+            return readAll(inputStream);
+        }
+    }
+
+    private byte[] readAll(InputStream inputStream) throws Exception {
+        try (InputStream in = inputStream;
+             ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+            byte[] buffer = new byte[8192];
+            int length;
+            while ((length = in.read(buffer)) != -1) {
+                output.write(buffer, 0, length);
+            }
+            return output.toByteArray();
+        }
+    }
+
+    private Integer detectPictureType(byte[] bytes) {
+        if (startsWith(bytes, new byte[]{(byte) 0x89, 'P', 'N', 'G'})) {
+            return Document.PICTURE_TYPE_PNG;
+        }
+        if (startsWith(bytes, new byte[]{(byte) 0xFF, (byte) 0xD8})) {
+            return Document.PICTURE_TYPE_JPEG;
+        }
+        if (startsWith(bytes, new byte[]{'G', 'I', 'F'})) {
+            return Document.PICTURE_TYPE_GIF;
+        }
+        if (startsWith(bytes, new byte[]{'B', 'M'})) {
+            return Document.PICTURE_TYPE_BMP;
+        }
+        if (startsWith(bytes, new byte[]{'I', 'I', 42, 0})
+                || startsWith(bytes, new byte[]{'M', 'M', 0, 42})) {
+            return Document.PICTURE_TYPE_TIFF;
+        }
+        return null;
+    }
+
+    private boolean startsWith(byte[] bytes, byte[] prefix) {
+        if (bytes == null || bytes.length < prefix.length) {
+            return false;
+        }
+        for (int i = 0; i < prefix.length; i++) {
+            if (bytes[i] != prefix[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private String fileName(Object source, int pictureType) {
+        String extension = pictureExtension(pictureType);
+        if (source instanceof File) {
+            return ((File) source).getName();
+        }
+        if (source instanceof Path) {
+            Path fileName = ((Path) source).getFileName();
+            return fileName == null ? "image." + extension : fileName.toString();
+        }
+        return "image." + extension;
+    }
+
+    private String pictureExtension(int pictureType) {
+        switch (pictureType) {
+            case Document.PICTURE_TYPE_JPEG:
+                return "jpg";
+            case Document.PICTURE_TYPE_GIF:
+                return "gif";
+            case Document.PICTURE_TYPE_BMP:
+                return "bmp";
+            case Document.PICTURE_TYPE_TIFF:
+                return "tiff";
+            case Document.PICTURE_TYPE_PNG:
+            default:
+                return "png";
+        }
+    }
+
+    private static class PictureData {
+        private final byte[] bytes;
+        private final int pictureType;
+        private final String fileName;
+        private final Integer widthEmu;
+        private final Integer heightEmu;
+
+        private PictureData(byte[] bytes, int pictureType, String fileName, Integer widthEmu, Integer heightEmu) {
+            this.bytes = bytes;
+            this.pictureType = pictureType;
+            this.fileName = fileName;
+            this.widthEmu = widthEmu;
+            this.heightEmu = heightEmu;
         }
     }
 

@@ -4,6 +4,9 @@ import com.chenbitao.word.constant.BlankConstants;
 import com.chenbitao.word.docx.TemplateWordGenerator;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -40,7 +43,7 @@ public class TemplateDemo {
         return template;
     }
 
-    private static Map<String, Object> prepareTemplateData() {
+    private static Map<String, Object> prepareTemplateData() throws Exception {
         Map<String, Object> data = new HashMap<>();
 
         // 基本信息
@@ -63,6 +66,9 @@ public class TemplateDemo {
 
         // 家庭及社会关系
         addFamilyAndSocialRelations(data);
+
+        // 照片
+        addPhoto(data);
 
         return data;
     }
@@ -133,6 +139,25 @@ public class TemplateDemo {
             relationList.add(buildRelation("", "", "", "", BlankConstants.EMPTY));
         }
         data.put("familyAndSocialRelations", relationList);
+    }
+
+    private static void addPhoto(Map<String, Object> data) throws Exception {
+        data.put("photo", TemplateWordGenerator.picture(
+                demoPhoto(),
+                org.apache.poi.util.Units.toEMU(80),
+                org.apache.poi.util.Units.toEMU(100)));
+    }
+
+    private static byte[] demoPhoto() throws Exception {
+        BufferedImage image = new BufferedImage(600, 800, BufferedImage.TYPE_INT_RGB);
+        for (int x = 0; x < image.getWidth(); x++) {
+            for (int y = 0; y < image.getHeight(); y++) {
+                image.setRGB(x, y, 0x4F7DD1);
+            }
+        }
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        ImageIO.write(image, "png", output);
+        return output.toByteArray();
     }
 
     private static void saveDocument(TemplateWordGenerator generator) throws Exception {
