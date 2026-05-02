@@ -12,6 +12,12 @@
     <url>http://maven.apache.org</url>
 
     <dependencies>
+<!-- 
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency> -->
+
         <dependency>
             <groupId>org.chenbitao</groupId>
             <artifactId>word-generator</artifactId>
