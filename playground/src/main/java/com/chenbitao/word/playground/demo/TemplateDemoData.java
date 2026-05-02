@@ -48,7 +48,7 @@ public final class TemplateDemoData {
     }
 
     private static void addQualification(Map<String, Object> data) {
-        data.put("qualificationName", "高级工程师\n技术总监");
+        data.put("qualificationName", "高级工程师\\n技术总监");
     }
 
     private static void addAppointmentInfo(Map<String, Object> data) {

@@ -454,7 +454,7 @@ public class TemplateWordGeneratorTest {
         data.put("appointmentRemovalReason", BlankConstants.NONE);
         data.put("rewardPunishmentRecord", BlankConstants.NONE);
         data.put("reportingUnit", BlankConstants.DASH);
-        data.put("workExperience", "2020.01 - 2021.06  ABC公司  高级开发工程师\n2021.07 - 2023.12  XYZ公司  技术总监");
+        data.put("workExperience", "2020.01 - 2021.06  ABC公司  高级开发工程师\\n2021.07 - 2023.12  XYZ公司  技术总监");
         data.put("familyAndSocialRelations", Arrays.asList(
                 relation("父亲", "张父", "56", "群众", BlankConstants.DASH),
                 relation("母亲", "张母", "55", "群众", BlankConstants.DASH)

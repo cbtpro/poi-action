@@ -2,17 +2,17 @@
 
 基于 Apache POI 的 Word 文档生成库，支持编程式生成和模板式生成两种方式。提供流式 API、模板引擎、工厂模式等设计模式，让 Word 文档生成变得简单高效。
 
-## 🚀 功能特性
+## 功能特性
 
-- ✅ **编程式生成**：使用流式 API（Builder 模式）直接构建 Word 文档
-- ✅ **模板式生成**：基于 Word 模板进行数据填充和循环渲染
-- ✅ **多格式支持**：支持 DOC 和 DOCX 两种 Word 文档格式
-- ✅ **丰富的元素支持**：段落、标题、表格、图片等
-- ✅ **表格高级功能**：单元格合并、循环填充等
-- ✅ **图片灵活处理**：支持本地文件、URL、Base64 等多种图片源
-- ✅ **设计模式应用**：工厂模式、建造者模式、模板方法模式
+- **编程式生成**：使用流式 API（Builder 模式）直接构建 Word 文档
+- **模板式生成**：基于 Word 模板进行数据填充和循环渲染
+- **多格式支持**：支持 DOC 和 DOCX 两种 Word 文档格式
+- **丰富的元素支持**：段落、标题、表格、图片等
+- **表格高级功能**：单元格合并、循环填充等
+- **图片灵活处理**：支持本地文件、URL、Base64 等多种图片源
+- **设计模式应用**：工厂模式、建造者模式、模板方法模式
 
-## 📦 项目结构
+## 项目结构
 
 ```
 poi-action/
@@ -31,7 +31,7 @@ poi-action/
 └── pom.xml                  # Maven 项目配置
 ```
 
-## 🔧 安装与快速开始
+## 安装与快速开始
 
 ### 前置要求
 
@@ -53,7 +53,7 @@ cd playground
 mvn exec:java -Dexec.mainClass=com.chenbitao.word.playground.demo.TemplateDemo
 ```
 
-## 📚 API 文档
+## API 文档
 
 ### 核心接口 - WordGenerator
 
@@ -297,7 +297,7 @@ public class WordException extends RuntimeException {
 
 ---
 
-## 💡 使用示例
+## 使用示例
 
 ### 示例 1：编程式生成简单文档
 
@@ -433,7 +433,7 @@ public class TableExample {
 
 ---
 
-## 🏗️ 架构设计
+## 架构设计
 
 ### 设计模式应用
 
@@ -455,7 +455,7 @@ public class TableExample {
 
 ---
 
-## 📋 主要实现类
+## 主要实现类
 
 | 类名 | 说明 | 备注 |
 |------|------|------|
@@ -467,7 +467,7 @@ public class TableExample {
 
 ---
 
-## ⚡ 性能
+## 性能
 
 poi-action 在性能方面表现出色，采用了多项优化策略：
 
@@ -543,7 +543,7 @@ public class PerformanceTest {
 
 ---
 
-## 🧪 测试
+## 测试
 
 项目包含完整的单元测试覆盖：
 
@@ -566,13 +566,13 @@ MIT License
 
 ---
 
-## 👨‍💻 贡献
+## 贡献
 
 欢迎提交 Issue 和 Pull Request！
 
 ---
 
-## 📖 相关文档与参考
+## 相关文档与参考
 
 ### Apache POI 官方资源
 
@@ -595,6 +595,6 @@ MIT License
 
 ---
 
-## 📞 联系方式
+## 联系方式
 
 如有任何问题或建议，请提交 Issue 或联系项目维护者。

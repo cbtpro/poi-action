@@ -22,9 +22,15 @@ import java.util.concurrent.atomic.AtomicReference;
 public class TemplateBatchDemo {
 
     private static final int DEFAULT_COUNT = 320000;
-    private static final int DEFAULT_THREADS = Math.max(1, Runtime.getRuntime().availableProcessors());
+    private static final int DEFAULT_THREADS = calculateDefaultThreads();
     private static final int PROGRESS_INTERVAL_SECONDS = 5;
     private static final Path OUTPUT_DIR = Paths.get("target", "out");
+
+    private static int calculateDefaultThreads() {
+        int processors = Runtime.getRuntime().availableProcessors();
+        // 采用更保守的默认值，避免大批量并发写入时把 CPU 占满。
+        return Math.max(1, processors / 4);
+    }
 
     /**
      * 批量生成入口。

@@ -1,0 +1,70 @@
+name: Publish to GitHub Packages
+
+on:
+  push:
+    branches:
+      - main
+      - 'release/**'
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    name: Deploy Maven artifacts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 8
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+
+      - name: Determine publish mode
+        id: publish_mode
+        run: |
+          echo "GITHUB_REF=${GITHUB_REF}"
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            echo "mode=tag" >> $GITHUB_OUTPUT
+          elif [[ "${GITHUB_REF}" == refs/heads/release/* ]]; then
+            echo "mode=release_branch" >> $GITHUB_OUTPUT
+          else
+            echo "mode=branch" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Configure Maven settings
+        run: |
+          mkdir -p ~/.m2
+          cat > ~/.m2/settings.xml <<'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                    xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd">
+            <servers>
+              <server>
+                <id>github</id>
+                <username>${{ github.actor }}</username>
+                <password>${{ secrets.GITHUB_TOKEN }}</password>
+              </server>
+            </servers>
+          </settings>
+          EOF
+
+      - name: Publish Maven artifacts
+        run: |
+          if [[ "${{ steps.publish_mode.outputs.mode }}" == "tag" ]]; then
+            echo "Publishing release artifacts for tag ${GITHUB_REF##*/}"
+            mvn -B -V -T 1C clean deploy --settings ~/.m2/settings.xml -DskipTests
+          elif [[ "${{ steps.publish_mode.outputs.mode }}" == "release_branch" ]]; then
+            echo "Publishing snapshot/pre-release artifacts from branch ${GITHUB_REF#refs/heads/}"
+            mvn -B -V -T 1C clean deploy --settings ~/.m2/settings.xml -DskipTests
+          else
+            echo "Publishing artifacts from branch ${GITHUB_REF#refs/heads/}"
+            mvn -B -V -T 1C clean deploy --settings ~/.m2/settings.xml -DskipTests
+          fi
