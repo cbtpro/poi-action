@@ -2,6 +2,7 @@ package com.chenbitao.playground.builder;
 
 import com.chenbitao.word.builder.WordBuilder;
 import com.chenbitao.word.core.WordGenerator;
+import com.chenbitao.word.core.WordTable;
 import org.junit.Test;
 
 import java.io.InputStream;
@@ -100,6 +101,26 @@ public class WordBuilderTest {
         @Override
         public void addTable(int rows, int cols) {
             calls.add("addTable:" + rows + ":" + cols);
+        }
+
+        /**
+         * 添加带内容的表格
+         *
+         * @param rows 表格数据，每个内部列表代表一行
+         */
+        @Override
+        public void addTable(List<List<String>> rows) {
+            calls.add("addTableRows:" + rows.size());
+        }
+
+        /**
+         * 添加结构化表格
+         *
+         * @param table 表格模型
+         */
+        @Override
+        public void addTable(WordTable table) {
+            calls.add("addWordTable:" + table.getRows().size());
         }
 
         /**

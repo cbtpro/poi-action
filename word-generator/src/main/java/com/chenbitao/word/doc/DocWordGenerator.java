@@ -1,12 +1,15 @@
 package com.chenbitao.word.doc;
 
 import com.chenbitao.word.core.AbstractWordGenerator;
+import com.chenbitao.word.core.WordTable;
+import com.chenbitao.word.core.WordTableCell;
 import com.chenbitao.word.exception.WordException;
 import org.apache.poi.hwpf.HWPFDocument;
 
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.util.List;
 
 /**
  * DOC格式Word文档生成器
@@ -73,6 +76,82 @@ public class DocWordGenerator extends AbstractWordGenerator {
     @Override
     public void addTable(int rows, int cols) {
         addParagraph("[DOC 不支持复杂表格]");
+    }
+
+    /**
+     * 添加带内容的表格
+     * DOC格式表格支持有限，使用制表符保留表格内容。
+     *
+     * @param rows 表格数据，每个内部列表代表一行
+     */
+    @Override
+    public void addTable(List<List<String>> rows) {
+        if (rows == null || rows.isEmpty()) {
+            return;
+        }
+
+        for (List<String> row : rows) {
+            addParagraph(joinRow(row));
+        }
+    }
+
+    private String joinRow(List<String> row) {
+        if (row == null || row.isEmpty()) {
+            return "";
+        }
+
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < row.size(); i++) {
+            if (i > 0) {
+                builder.append('\t');
+            }
+            String cell = row.get(i);
+            builder.append(cell == null ? "" : cell);
+        }
+        return builder.toString();
+    }
+
+    /**
+     * 添加结构化表格
+     * DOC格式不支持复杂表格，使用制表符尽量保留文本内容。
+     *
+     * @param table 表格模型
+     */
+    @Override
+    public void addTable(WordTable table) {
+        if (table == null || table.getRows().isEmpty()) {
+            return;
+        }
+
+        for (List<WordTableCell> row : table.getRows()) {
+            addParagraph(joinStructuredRow(row));
+        }
+    }
+
+    private String joinStructuredRow(List<WordTableCell> row) {
+        if (row == null || row.isEmpty()) {
+            return "";
+        }
+
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < row.size(); i++) {
+            if (i > 0) {
+                builder.append('\t');
+            }
+            WordTableCell cell = row.get(i);
+            builder.append(cellText(cell));
+        }
+        return builder.toString();
+    }
+
+    private String cellText(WordTableCell cell) {
+        if (cell == null) {
+            return "";
+        }
+        if (cell.hasImage()) {
+            return "[图片]";
+        }
+        return cell.getText() == null ? "" : cell.getText();
     }
 
     /**

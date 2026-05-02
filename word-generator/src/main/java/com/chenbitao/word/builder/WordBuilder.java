@@ -1,6 +1,10 @@
 package com.chenbitao.word.builder;
 
 import com.chenbitao.word.core.WordGenerator;
+import com.chenbitao.word.core.WordTable;
+
+import java.io.InputStream;
+import java.util.List;
 
 /**
  * Word文档建造者类
@@ -65,6 +69,41 @@ public class WordBuilder {
      */
     public WordBuilder table(int r, int c) {
         generator.addTable(r, c);
+        return this;
+    }
+
+    /**
+     * 添加带内容的表格
+     *
+     * @param rows 表格数据，每个内部列表代表一行
+     * @return 当前建造者实例，支持链式调用
+     */
+    public WordBuilder table(List<List<String>> rows) {
+        generator.addTable(rows);
+        return this;
+    }
+
+    /**
+     * 添加结构化表格
+     *
+     * @param table 表格模型
+     * @return 当前建造者实例，支持链式调用
+     */
+    public WordBuilder table(WordTable table) {
+        generator.addTable(table);
+        return this;
+    }
+
+    /**
+     * 添加图片
+     *
+     * @param inputStream 图片输入流
+     * @param width 图片宽度（EMU单位）
+     * @param height 图片高度（EMU单位）
+     * @return 当前建造者实例，支持链式调用
+     */
+    public WordBuilder image(InputStream inputStream, int width, int height) {
+        generator.addImage(inputStream, width, height);
         return this;
     }
 

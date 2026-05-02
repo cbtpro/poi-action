@@ -1,6 +1,7 @@
 package com.chenbitao.word.core;
 
 import java.io.InputStream;
+import java.util.List;
 
 /**
  * Word文档生成器接口
@@ -37,11 +38,25 @@ public interface WordGenerator {
     void addTable(int rows, int cols);
 
     /**
+     * 添加带内容的表格
+     *
+     * @param rows 表格数据，每个内部列表代表一行
+     */
+    void addTable(List<List<String>> rows);
+
+    /**
+     * 添加结构化表格
+     *
+     * @param table 表格模型
+     */
+    void addTable(WordTable table);
+
+    /**
      * 添加图片
      *
      * @param inputStream 图片输入流
-     * @param width 图片宽度（像素）
-     * @param height 图片高度（像素）
+     * @param width 图片宽度（EMU单位）
+     * @param height 图片高度（EMU单位）
      */
     void addImage(InputStream inputStream, int width, int height);
 

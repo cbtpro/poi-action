@@ -87,6 +87,33 @@ public class TemplateWordGenerator {
             this.widthEmu = widthEmu;
             this.heightEmu = heightEmu;
         }
+
+        /**
+         * 获取图片源数据。
+         *
+         * @return 图片源
+         */
+        public Object getSource() {
+            return source;
+        }
+
+        /**
+         * 获取图片宽度。
+         *
+         * @return 图片宽度（EMU单位），未指定时返回null
+         */
+        public Integer getWidthEmu() {
+            return widthEmu;
+        }
+
+        /**
+         * 获取图片高度。
+         *
+         * @return 图片高度（EMU单位），未指定时返回null
+         */
+        public Integer getHeightEmu() {
+            return heightEmu;
+        }
     }
 
     /**
