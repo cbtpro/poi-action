@@ -16,8 +16,10 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -464,11 +466,31 @@ public class TemplateWordGenerator {
             return Collections.emptyList();
         }
 
-        return safeCastToListOfMaps(value);
+        return toListOfMaps((List<?>) value, listName);
     }
 
-    private List<Map<String, Object>> safeCastToListOfMaps(Object value) {
-        return (List<Map<String, Object>>) value;
+    private List<Map<String, Object>> toListOfMaps(List<?> values, String listName) {
+        List<Map<String, Object>> result = new ArrayList<>(values.size());
+        for (Object item : values) {
+            result.add(toStringKeyMap(item, listName));
+        }
+        return result;
+    }
+
+    private Map<String, Object> toStringKeyMap(Object item, String listName) {
+        if (!(item instanceof Map)) {
+            throw new WordException("循环数据必须是Map类型：" + listName, null);
+        }
+        Map<?, ?> source = (Map<?, ?>) item;
+        Map<String, Object> result = new LinkedHashMap<>(source.size());
+        for (Map.Entry<?, ?> entry : source.entrySet()) {
+            Object key = entry.getKey();
+            if (!(key instanceof String)) {
+                throw new WordException("循环数据的字段名必须是String类型：" + listName, null);
+            }
+            result.put((String) key, entry.getValue());
+        }
+        return result;
     }
 
     /**

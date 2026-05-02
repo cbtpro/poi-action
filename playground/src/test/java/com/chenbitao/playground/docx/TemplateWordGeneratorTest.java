@@ -2,6 +2,7 @@ package com.chenbitao.playground.docx;
 
 import com.chenbitao.word.constant.BlankConstants;
 import com.chenbitao.word.docx.TemplateWordGenerator;
+import com.chenbitao.word.exception.WordException;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.apache.poi.xwpf.usermodel.XWPFTable;
@@ -501,6 +502,29 @@ public class TemplateWordGeneratorTest {
             assertFalse(allText(rendered).contains("${photo}"));
             assertEquals(0, rendered.getAllPictures().size());
         }
+    }
+
+    @Test(expected = WordException.class)
+    public void renderRejectsLoopListItemThatIsNotMap() throws Exception {
+        TemplateWordGenerator generator = new TemplateWordGenerator(new ByteArrayInputStream(createTemplate()));
+        Map<String, Object> data = new HashMap<>();
+        data.put("name", "张三");
+        data.put("exp", Arrays.asList("not-a-map"));
+
+        generator.render(data);
+    }
+
+    @Test(expected = WordException.class)
+    public void renderRejectsLoopMapWithNonStringKey() throws Exception {
+        TemplateWordGenerator generator = new TemplateWordGenerator(new ByteArrayInputStream(createTemplate()));
+        Map<Object, Object> item = new HashMap<>();
+        item.put(1, "2024");
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("name", "张三");
+        data.put("exp", Arrays.asList(item));
+
+        generator.render(data);
     }
 
     private static byte[] createTemplate() throws Exception {
