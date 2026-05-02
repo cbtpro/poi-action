@@ -60,11 +60,11 @@ jobs:
         run: |
           if [[ "${{ steps.publish_mode.outputs.mode }}" == "tag" ]]; then
             echo "Publishing release artifacts for tag ${GITHUB_REF##*/}"
-            mvn -B -V -T 1C clean deploy --settings ~/.m2/settings.xml -DskipTests
+            mvn -B -V -T 1C -pl word-generator -am clean deploy --settings ~/.m2/settings.xml -DskipTests
           elif [[ "${{ steps.publish_mode.outputs.mode }}" == "release_branch" ]]; then
             echo "Publishing snapshot/pre-release artifacts from branch ${GITHUB_REF#refs/heads/}"
-            mvn -B -V -T 1C clean deploy --settings ~/.m2/settings.xml -DskipTests
+            mvn -B -V -T 1C -pl word-generator -am clean deploy --settings ~/.m2/settings.xml -DskipTests
           else
             echo "Publishing artifacts from branch ${GITHUB_REF#refs/heads/}"
-            mvn -B -V -T 1C clean deploy --settings ~/.m2/settings.xml -DskipTests
+            mvn -B -V -T 1C -pl word-generator -am clean deploy --settings ~/.m2/settings.xml -DskipTests
           fi
