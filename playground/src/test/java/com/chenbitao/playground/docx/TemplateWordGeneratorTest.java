@@ -19,10 +19,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.InputStream;
-import java.util.Base64;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -414,8 +411,7 @@ public class TemplateWordGeneratorTest {
             generator.render(data);
             generator.save(output);
 
-            try (XWPFDocument rendered =
-                         new XWPFDocument(new ByteArrayInputStream(output.toByteArray()))) {
+            try (XWPFDocument rendered = new XWPFDocument(new ByteArrayInputStream(output.toByteArray()))) {
                 assertEquals("", rendered.getParagraphArray(0).getText());
                 assertEquals("", rendered.getParagraphArray(1).getText());
                 assertEquals(0, rendered.getAllPictures().size());
@@ -509,7 +505,7 @@ public class TemplateWordGeneratorTest {
         TemplateWordGenerator generator = new TemplateWordGenerator(new ByteArrayInputStream(createTemplate()));
         Map<String, Object> data = new HashMap<>();
         data.put("name", "张三");
-        data.put("exp", Arrays.asList("not-a-map"));
+        data.put("exp", Collections.singletonList("not-a-map"));
 
         generator.render(data);
     }
@@ -522,7 +518,7 @@ public class TemplateWordGeneratorTest {
 
         Map<String, Object> data = new HashMap<>();
         data.put("name", "张三");
-        data.put("exp", Arrays.asList(item));
+        data.put("exp", Collections.singletonList(item));
 
         generator.render(data);
     }
