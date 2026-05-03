@@ -7,6 +7,7 @@ import org.apache.poi.util.Units;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -18,7 +19,7 @@ public final class TemplateDemoData {
     private TemplateDemoData() {
     }
 
-    public static Map<String, Object> create() throws Exception {
+    public static Map<String, Object> create() throws IOException {
         Map<String, Object> data = new HashMap<>();
 
         addBasicInfo(data);
@@ -91,14 +92,14 @@ public final class TemplateDemoData {
         data.put("familyAndSocialRelations", relationList);
     }
 
-    private static void addPhoto(Map<String, Object> data) throws Exception {
+    private static void addPhoto(Map<String, Object> data) throws IOException {
         data.put("photo", TemplateWordGenerator.picture(
                 demoPhoto(),
                 Units.toEMU(80),
                 Units.toEMU(100)));
     }
 
-    private static byte[] demoPhoto() throws Exception {
+    private static byte[] demoPhoto() throws IOException {
         BufferedImage image = new BufferedImage(600, 800, BufferedImage.TYPE_INT_RGB);
         for (int x = 0; x < image.getWidth(); x++) {
             for (int y = 0; y < image.getHeight(); y++) {
