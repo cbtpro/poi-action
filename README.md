@@ -558,6 +558,47 @@ mvn test -Dtest=TemplateWordGeneratorTest
 mvn test -Dtest=WordGeneratorFactoryTest
 ```
 
+### Actuator
+
+```http
+GET /actuator
+GET /actuator/health
+GET /actuator/info
+GET /actuator/metrics
+GET /actuator/env
+GET /actuator/beans
+```
+
+Actuator 只在 `dev` 和 `test` profile 中生效。未启用这两个 profile 时，默认配置会关闭 actuator endpoint 暴露：
+
+```yaml
+management:
+  endpoints:
+    enabled-by-default: false
+    web:
+      exposure:
+        exclude: "*"
+```
+
+`dev` / `test` 环境会暴露：
+
+```yaml
+management:
+  endpoints:
+    enabled-by-default: true
+    web:
+      exposure:
+        include: health,info,metrics,env,beans
+```
+
+如果 `/actuator` 访问不到，优先检查：
+
+- `playground` 是否包含 `spring-boot-starter-actuator` 依赖。
+- 服务是否真的从 `playground` 模块启动。
+- 端口是否是 `8080`。
+- 是否启用了 `dev` 或 `test` profile。
+- 控制台是否出现 actuator endpoint 映射日志。
+
 ---
 
 ## 📝 许可证

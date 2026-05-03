@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: playground
+  profiles:
+    include: local
+
+server:
+  port: 8080
+
+logging:
+  level:
+    root: INFO
+    com.chenbitao.word.playground: DEBUG
+
+management:
+  endpoints:
+    enabled-by-default: false
+    web:
+      exposure:
+        exclude: "*"
+  endpoint:
+    health:
+      show-details: when_authorized

@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -15,7 +16,7 @@ import java.nio.charset.StandardCharsets;
 public class ResumeController {
 
     @GetMapping("/download")
-    public void download(HttpServletResponse response) throws Exception {
+    public void download(HttpServletResponse response) throws IOException {
         TemplateWordGenerator generator = new TemplateWordGenerator(TemplateDemo.loadTemplate());
         generator.render(TemplateDemoData.create());
 
