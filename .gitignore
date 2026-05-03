@@ -41,3 +41,5 @@ build/
 .idea
 
 .history
+
+application-local.yml

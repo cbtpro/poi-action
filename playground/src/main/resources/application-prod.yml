@@ -1,16 +1,7 @@
 spring:
-  application:
-    name: playground
-  profiles:
-    include: local
-
-server:
-  port: 8080
-
-logging:
-  level:
-    root: INFO
-    com.chenbitao.word.playground: DEBUG
+  config:
+    activate:
+      on-profile: prod
 
 management:
   endpoints:
