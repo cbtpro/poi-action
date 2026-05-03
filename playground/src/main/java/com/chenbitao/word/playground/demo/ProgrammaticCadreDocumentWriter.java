@@ -35,10 +35,7 @@ import org.w3c.dom.Node;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.InputStream;
+import java.io.*;
 import java.math.BigInteger;
 import java.net.URI;
 import java.net.URL;
@@ -58,9 +55,16 @@ import java.util.Map;
  */
 final class ProgrammaticCadreDocumentWriter {
 
+    /** 字体名称：宋体 */
     private static final String FONT = "宋体";
+
+    /** Word XML 命名空间 */
     private static final String W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
+
+    /** 表格总宽度（DXA单位） */
     private static final int TABLE_WIDTH_DXA = 9752;
+
+    /** 表格列宽度数组（DXA单位） */
     private static final int[] COLUMN_WIDTHS = {986, 1434, 1132, 1384, 1500, 1384, 1932};
 
     /**
@@ -84,6 +88,11 @@ final class ProgrammaticCadreDocumentWriter {
         }
     }
 
+    /**
+     * 设置页面格式（页面大小和边距）。
+     *
+     * @param document Word文档对象
+     */
     private void setupPage(XWPFDocument document) {
         CTBody body = document.getDocument().getBody();
         CTSectPr section = body.isSetSectPr() ? body.getSectPr() : body.addNewSectPr();
@@ -107,6 +116,12 @@ final class ProgrammaticCadreDocumentWriter {
         sectionNode.appendChild(pageMargin);
     }
 
+    /**
+     * 从父节点中移除指定名称的子节点。
+     *
+     * @param parent 父节点
+     * @param localName 子节点本地名称
+     */
     private void removeChild(Node parent, String localName) {
         for (int i = parent.getChildNodes().getLength() - 1; i >= 0; i--) {
             Node child = parent.getChildNodes().item(i);
@@ -116,6 +131,11 @@ final class ProgrammaticCadreDocumentWriter {
         }
     }
 
+    /**
+     * 添加文档标题。
+     *
+     * @param document Word文档对象
+     */
     private void addTitle(XWPFDocument document) {
         XWPFParagraph paragraph = document.createParagraph();
         paragraph.setAlignment(ParagraphAlignment.CENTER);
@@ -124,6 +144,13 @@ final class ProgrammaticCadreDocumentWriter {
         run.setText("干部任免审批表");
     }
 
+    /**
+     * 添加主表格到文档。
+     *
+     * @param document Word文档对象
+     * @param data 业务数据
+     * @throws Exception 如果表格创建失败
+     */
     private void addMainTable(XWPFDocument document, Map<String, Object> data) throws Exception {
         List<RowSpec> rows = rows(data);
         XWPFTable table = document.createTable();
@@ -147,6 +174,13 @@ final class ProgrammaticCadreDocumentWriter {
         }
     }
 
+    /**
+     * 构建表格行规格列表。
+     *
+     * @param data 业务数据
+     * @return 行规格列表
+     * @throws Exception 如果行构建失败
+     */
     private List<RowSpec> rows(Map<String, Object> data) throws Exception {
         List<RowSpec> rows = new ArrayList<>();
 
@@ -189,6 +223,12 @@ final class ProgrammaticCadreDocumentWriter {
         return rows;
     }
 
+    /**
+     * 添加学历学位行到表格。
+     *
+     * @param rows 行规格列表
+     * @param data 业务数据
+     */
     private void addEducationRows(List<RowSpec> rows, Map<String, Object> data) {
         List<Map<?, ?>> educationList = toMapList(data.get("education"));
         int count = Math.max(1, educationList.size());
@@ -205,6 +245,12 @@ final class ProgrammaticCadreDocumentWriter {
         }
     }
 
+    /**
+     * 添加家庭成员行到表格。
+     *
+     * @param rows 行规格列表
+     * @param data 业务数据
+     */
     private void addFamilyRows(List<RowSpec> rows, Map<String, Object> data) {
         List<Map<?, ?>> relations = toMapList(data.get("familyAndSocialRelations"));
         int relationRows = Math.max(1, relations.size());
@@ -226,6 +272,13 @@ final class ProgrammaticCadreDocumentWriter {
         }
     }
 
+    /**
+     * 创建照片单元格规格。
+     *
+     * @param data 业务数据
+     * @return 单元格规格
+     * @throws Exception 如果图片处理失败
+     */
     private CellSpec photoCell(Map<String, Object> data) throws Exception {
         Object value = data.get("photo");
         if (!(value instanceof TemplateWordGenerator.Picture)) {
@@ -241,32 +294,59 @@ final class ProgrammaticCadreDocumentWriter {
 
     private void configureTable(XWPFTable table) {
         CTTbl ctTbl = table.getCTTbl();
-        CTTblPr tblPr = ctTbl.getTblPr() == null ? ctTbl.addNewTblPr() : ctTbl.getTblPr();
+        CTTblPr tblPr = getOrCreateTableProperties(ctTbl);
+
+        configureTableWidth(tblPr);
+        configureTableLayout(tblPr);
+        configureTableBorders(tblPr);
+        configureTableCellMargins(tblPr);
+        configureTableGrid(ctTbl);
+    }
+
+    private CTTblPr getOrCreateTableProperties(CTTbl ctTbl) {
+        return ctTbl.getTblPr() == null ? ctTbl.addNewTblPr() : ctTbl.getTblPr();
+    }
+
+    private void configureTableWidth(CTTblPr tblPr) {
         CTTblWidth width = tblPr.isSetTblW() ? tblPr.getTblW() : tblPr.addNewTblW();
         width.setW(BigInteger.valueOf(TABLE_WIDTH_DXA));
         width.setType(STTblWidth.DXA);
+    }
 
+    private void configureTableLayout(CTTblPr tblPr) {
         CTTblLayoutType layout = tblPr.isSetTblLayout() ? tblPr.getTblLayout() : tblPr.addNewTblLayout();
         layout.setType(STTblLayoutType.FIXED);
+    }
 
+    private void configureTableBorders(CTTblPr tblPr) {
         CTTblBorders borders = tblPr.isSetTblBorders() ? tblPr.getTblBorders() : tblPr.addNewTblBorders();
+
         setBorder(borders.isSetTop() ? borders.getTop() : borders.addNewTop());
         setBorder(borders.isSetLeft() ? borders.getLeft() : borders.addNewLeft());
         setBorder(borders.isSetBottom() ? borders.getBottom() : borders.addNewBottom());
         setBorder(borders.isSetRight() ? borders.getRight() : borders.addNewRight());
         setBorder(borders.isSetInsideH() ? borders.getInsideH() : borders.addNewInsideH());
         setBorder(borders.isSetInsideV() ? borders.getInsideV() : borders.addNewInsideV());
+    }
 
+    private void configureTableCellMargins(CTTblPr tblPr) {
         CTTblCellMar cellMar = tblPr.isSetTblCellMar() ? tblPr.getTblCellMar() : tblPr.addNewTblCellMar();
+
         setCellMargin(cellMar.isSetTop() ? cellMar.getTop() : cellMar.addNewTop(), 0);
         setCellMargin(cellMar.isSetBottom() ? cellMar.getBottom() : cellMar.addNewBottom(), 0);
         setCellMargin(cellMar.isSetLeft() ? cellMar.getLeft() : cellMar.addNewLeft(), 108);
         setCellMargin(cellMar.isSetRight() ? cellMar.getRight() : cellMar.addNewRight(), 108);
+    }
 
+    private void configureTableGrid(CTTbl ctTbl) {
         CTTblGrid grid = ctTbl.getTblGrid() == null ? ctTbl.addNewTblGrid() : ctTbl.getTblGrid();
+
+        // Clear existing columns
         while (grid.sizeOfGridColArray() > 0) {
             grid.removeGridCol(grid.sizeOfGridColArray() - 1);
         }
+
+        // Add new columns with specified widths
         for (int columnWidth : COLUMN_WIDTHS) {
             CTTblGridCol column = grid.addNewGridCol();
             column.setW(BigInteger.valueOf(columnWidth));
@@ -372,13 +452,24 @@ final class ProgrammaticCadreDocumentWriter {
     private void applyFont(XWPFRun run, int fontSize) {
         run.setFontFamily(FONT);
         run.setFontSize(fontSize);
-        CTFonts fonts = run.getCTR().isSetRPr()
-                ? (run.getCTR().getRPr().isSetRFonts() ? run.getCTR().getRPr().getRFonts() : run.getCTR().getRPr().addNewRFonts())
-                : run.getCTR().addNewRPr().addNewRFonts();
+
+        CTFonts fonts = getOrCreateFonts(run);
         fonts.setAscii(FONT);
         fonts.setHAnsi(FONT);
         fonts.setEastAsia(FONT);
         fonts.setCs(FONT);
+    }
+
+    private CTFonts getOrCreateFonts(XWPFRun run) {
+        if (!run.getCTR().isSetRPr()) {
+            return run.getCTR().addNewRPr().addNewRFonts();
+        }
+
+        if (!run.getCTR().getRPr().isSetRFonts()) {
+            return run.getCTR().getRPr().addNewRFonts();
+        }
+
+        return run.getCTR().getRPr().getRFonts();
     }
 
     private void addReporter(XWPFDocument document) {
@@ -417,23 +508,39 @@ final class ProgrammaticCadreDocumentWriter {
             return readAll((InputStream) source);
         }
         if (source instanceof File) {
-            return Files.readAllBytes(((File) source).toPath());
+            return readFileBytes((File) source);
         }
         if (source instanceof Path) {
-            return Files.readAllBytes((Path) source);
+            return readPathBytes((Path) source);
         }
         if (source instanceof URL) {
-            try (InputStream inputStream = ((URL) source).openStream()) {
-                return readAll(inputStream);
-            }
+            return readUrlBytes((URL) source);
         }
         if (source instanceof URI) {
-            return readBytes(((URI) source).toURL());
+            return readUriBytes((URI) source);
         }
         if (source instanceof String) {
             return readStringSource((String) source);
         }
         throw new IllegalArgumentException("不支持的图片输入类型：" + source.getClass().getName());
+    }
+
+    private byte[] readFileBytes(File file) throws IOException {
+        return Files.readAllBytes(file.toPath());
+    }
+
+    private byte[] readPathBytes(Path path) throws IOException {
+        return Files.readAllBytes(path);
+    }
+
+    private byte[] readUrlBytes(URL url) throws IOException {
+        try (InputStream inputStream = url.openStream()) {
+            return readAll(inputStream);
+        }
+    }
+
+    private byte[] readUriBytes(URI uri) throws IOException {
+        return readUrlBytes(uri.toURL());
     }
 
     private byte[] readStringSource(String source) throws Exception {
@@ -455,7 +562,7 @@ final class ProgrammaticCadreDocumentWriter {
         return Base64.getDecoder().decode(base64);
     }
 
-    private byte[] readAll(InputStream inputStream) throws Exception {
+    private byte[] readAll(InputStream inputStream) throws IOException {
         try (InputStream in = inputStream; ByteArrayOutputStream output = new ByteArrayOutputStream()) {
             byte[] buffer = new byte[8192];
             int read;
