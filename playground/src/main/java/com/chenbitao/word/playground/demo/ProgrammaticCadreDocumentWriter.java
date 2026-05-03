@@ -292,6 +292,16 @@ final class ProgrammaticCadreDocumentWriter {
         return image(toPngBytes(picture.getSource()), picture.getWidthEmu(), picture.getHeightEmu()).center();
     }
 
+    /**
+     * 配置主表格的整体属性。
+     *
+     * @param table 目标表格
+     */
+    /**
+     * 初始化并配置主表格的属性、宽度、边框、单元格边距和网格列。
+     *
+     * @param table 目标表格
+     */
     private void configureTable(XWPFTable table) {
         CTTbl ctTbl = table.getCTTbl();
         CTTblPr tblPr = getOrCreateTableProperties(ctTbl);
@@ -303,21 +313,42 @@ final class ProgrammaticCadreDocumentWriter {
         configureTableGrid(ctTbl);
     }
 
+    /**
+     * 获取或创建表格属性对象。
+     *
+     * @param ctTbl 表格 CT 对象
+     * @return 表格属性对象
+     */
     private CTTblPr getOrCreateTableProperties(CTTbl ctTbl) {
         return ctTbl.getTblPr() == null ? ctTbl.addNewTblPr() : ctTbl.getTblPr();
     }
 
+    /**
+     * 设置表格宽度为预定义值。
+     *
+     * @param tblPr 表格属性对象
+     */
     private void configureTableWidth(CTTblPr tblPr) {
         CTTblWidth width = tblPr.isSetTblW() ? tblPr.getTblW() : tblPr.addNewTblW();
         width.setW(BigInteger.valueOf(TABLE_WIDTH_DXA));
         width.setType(STTblWidth.DXA);
     }
 
+    /**
+     * 设置表格的布局模式为固定宽度。
+     *
+     * @param tblPr 表格属性对象
+     */
     private void configureTableLayout(CTTblPr tblPr) {
         CTTblLayoutType layout = tblPr.isSetTblLayout() ? tblPr.getTblLayout() : tblPr.addNewTblLayout();
         layout.setType(STTblLayoutType.FIXED);
     }
 
+    /**
+     * 为表格添加边框样式。
+     *
+     * @param tblPr 表格属性对象
+     */
     private void configureTableBorders(CTTblPr tblPr) {
         CTTblBorders borders = tblPr.isSetTblBorders() ? tblPr.getTblBorders() : tblPr.addNewTblBorders();
 
@@ -329,6 +360,11 @@ final class ProgrammaticCadreDocumentWriter {
         setBorder(borders.isSetInsideV() ? borders.getInsideV() : borders.addNewInsideV());
     }
 
+    /**
+     * 设置表格单元格的默认边距。
+     *
+     * @param tblPr 表格属性对象
+     */
     private void configureTableCellMargins(CTTblPr tblPr) {
         CTTblCellMar cellMar = tblPr.isSetTblCellMar() ? tblPr.getTblCellMar() : tblPr.addNewTblCellMar();
 
@@ -338,6 +374,11 @@ final class ProgrammaticCadreDocumentWriter {
         setCellMargin(cellMar.isSetRight() ? cellMar.getRight() : cellMar.addNewRight(), 108);
     }
 
+    /**
+     * 配置表格网格列宽度。
+     *
+     * @param ctTbl 表格 CT 对象
+     */
     private void configureTableGrid(CTTbl ctTbl) {
         CTTblGrid grid = ctTbl.getTblGrid() == null ? ctTbl.addNewTblGrid() : ctTbl.getTblGrid();
 
@@ -353,6 +394,13 @@ final class ProgrammaticCadreDocumentWriter {
         }
     }
 
+    /**
+     * 为单元格应用规格并写入内容。
+     *
+     * @param cell 单元格对象
+     * @param spec 单元格规格
+     * @param width 单元格宽度（DXA）
+     */
     private void configureCell(XWPFTableCell cell, CellSpec spec, int width) {
         CTTcPr tcPr = cell.getCTTc().isSetTcPr()
                 ? cell.getCTTc().getTcPr()
@@ -380,6 +428,12 @@ final class ProgrammaticCadreDocumentWriter {
         }
     }
 
+    /**
+     * 将文本写入段落，并保持换行。
+     *
+     * @param run 运行对象
+     * @param text 文本内容
+     */
     private void writeText(XWPFRun run, String text) {
         applyFont(run, 12);
         String[] lines = text.split("\\n", -1);
@@ -391,6 +445,12 @@ final class ProgrammaticCadreDocumentWriter {
         }
     }
 
+    /**
+     * 将图片字节流插入到单元格中。
+     *
+     * @param run 运行对象
+     * @param spec 图片单元格规格
+     */
     private void writeImage(XWPFRun run, CellSpec spec) {
         try {
             run.addPicture(new ByteArrayInputStream(spec.imageBytes),
@@ -403,6 +463,12 @@ final class ProgrammaticCadreDocumentWriter {
         }
     }
 
+    /**
+     * 重置单元格中的段落，确保使用单个空段落进行写入。
+     *
+     * @param cell 单元格对象
+     * @return 可写入的段落对象
+     */
     private XWPFParagraph resetParagraph(XWPFTableCell cell) {
         while (cell.getParagraphs().size() > 1) {
             cell.removeParagraph(1);
@@ -417,6 +483,14 @@ final class ProgrammaticCadreDocumentWriter {
         return paragraph;
     }
 
+    /**
+     * 确保表格行包含正确数量的单元格。
+     *
+     * @param table 表格对象
+     * @param rowIndex 行索引
+     * @param cellCount 目标单元格数量
+     * @return 已准备好的表格行
+     */
     private XWPFTableRow prepareRow(XWPFTable table, int rowIndex, int cellCount) {
         XWPFTableRow row = rowIndex == 0 ? table.getRow(0) : table.createRow();
         while (row.getTableCells().size() > cellCount) {
@@ -430,6 +504,12 @@ final class ProgrammaticCadreDocumentWriter {
         return row;
     }
 
+    /**
+     * 设置行高。
+     *
+     * @param row 行对象
+     * @param heightDxa 行高，DXA 单位
+     */
     private void setRowHeight(XWPFTableRow row, int heightDxa) {
         CTTrPr trPr = row.getCtRow().isSetTrPr() ? row.getCtRow().getTrPr() : row.getCtRow().addNewTrPr();
         CTHeight height = trPr.sizeOfTrHeightArray() > 0 ? trPr.getTrHeightArray(0) : trPr.addNewTrHeight();
@@ -437,6 +517,11 @@ final class ProgrammaticCadreDocumentWriter {
         height.setHRule(STHeightRule.AT_LEAST);
     }
 
+    /**
+     * 设置边框样式。
+     *
+     * @param border 边框对象
+     */
     private void setBorder(CTBorder border) {
         border.setVal(STBorder.SINGLE);
         border.setColor("auto");
@@ -444,11 +529,23 @@ final class ProgrammaticCadreDocumentWriter {
         border.setSpace(BigInteger.ZERO);
     }
 
+    /**
+     * 设置单元格边距属性。
+     *
+     * @param margin 单元格宽度对象
+     * @param width 边距宽度（DXA）
+     */
     private void setCellMargin(CTTblWidth margin, int width) {
         margin.setW(BigInteger.valueOf(width));
         margin.setType(STTblWidth.DXA);
     }
 
+    /**
+     * 应用默认字体样式到运行对象。
+     *
+     * @param run 运行对象
+     * @param fontSize 字号
+     */
     private void applyFont(XWPFRun run, int fontSize) {
         run.setFontFamily(FONT);
         run.setFontSize(fontSize);
@@ -460,6 +557,12 @@ final class ProgrammaticCadreDocumentWriter {
         fonts.setCs(FONT);
     }
 
+    /**
+     * 获取或创建运行对象的字体配置。
+     *
+     * @param run 运行对象
+     * @return 字体配置对象
+     */
     private CTFonts getOrCreateFonts(XWPFRun run) {
         if (!run.getCTR().isSetRPr()) {
             return run.getCTR().addNewRPr().addNewRFonts();
@@ -472,6 +575,11 @@ final class ProgrammaticCadreDocumentWriter {
         return run.getCTR().getRPr().getRFonts();
     }
 
+    /**
+     * 添加填表人信息段落。
+     *
+     * @param document 文档对象
+     */
     private void addReporter(XWPFDocument document) {
         XWPFParagraph paragraph = document.createParagraph();
         XWPFRun run = paragraph.createRun();
@@ -480,6 +588,13 @@ final class ProgrammaticCadreDocumentWriter {
         document.createParagraph();
     }
 
+    /**
+     * 计算跨列单元格的总宽度。
+     *
+     * @param startColumn 起始列号
+     * @param colSpan 列跨度
+     * @return 宽度（DXA）
+     */
     private int width(int startColumn, int colSpan) {
         int width = 0;
         for (int i = startColumn; i < startColumn + colSpan && i < COLUMN_WIDTHS.length; i++) {
@@ -488,6 +603,13 @@ final class ProgrammaticCadreDocumentWriter {
         return width;
     }
 
+    /**
+     * 将图片来源转换为 PNG 字节数组。
+     *
+     * @param source 图片来源
+     * @return PNG 图像字节数组
+     * @throws Exception 转换失败时抛出
+     */
     private byte[] toPngBytes(Object source) throws Exception {
         byte[] bytes = readBytes(source);
         BufferedImage image = ImageIO.read(new ByteArrayInputStream(bytes));
@@ -500,6 +622,13 @@ final class ProgrammaticCadreDocumentWriter {
         return output.toByteArray();
     }
 
+    /**
+     * 从多种来源读取图片字节。
+     *
+     * @param source 图片来源
+     * @return 图片字节数组
+     * @throws Exception 读取失败时抛出
+     */
     private byte[] readBytes(Object source) throws Exception {
         if (source instanceof byte[]) {
             return (byte[]) source;
@@ -525,24 +654,59 @@ final class ProgrammaticCadreDocumentWriter {
         throw new IllegalArgumentException("不支持的图片输入类型：" + source.getClass().getName());
     }
 
+    /**
+     * 从文件读取字节数组。
+     *
+     * @param file 文件对象
+     * @return 文件字节数组
+     * @throws IOException 读取失败时抛出
+     */
     private byte[] readFileBytes(File file) throws IOException {
         return Files.readAllBytes(file.toPath());
     }
 
+    /**
+     * 从路径读取字节数组。
+     *
+     * @param path 路径对象
+     * @return 字节数组
+     * @throws IOException 读取失败时抛出
+     */
     private byte[] readPathBytes(Path path) throws IOException {
         return Files.readAllBytes(path);
     }
 
+    /**
+     * 从 URL 读取字节数组。
+     *
+     * @param url URL 对象
+     * @return 字节数组
+     * @throws IOException 读取失败时抛出
+     */
     private byte[] readUrlBytes(URL url) throws IOException {
         try (InputStream inputStream = url.openStream()) {
             return readAll(inputStream);
         }
     }
 
+    /**
+     * 从 URI 读取字节数组。
+     *
+     * @param uri URI 对象
+     * @return 字节数组
+     * @throws IOException 读取失败时抛出
+     */
     private byte[] readUriBytes(URI uri) throws IOException {
         return readUrlBytes(uri.toURL());
     }
 
+    /**
+     * 读取字符串形式的图片来源，支持 URL、路径和 Base64。
+     *
+     * @param source 图片来源字符串
+     * @return 图片字节数组
+     * @throws Exception 解析或读取失败时抛出
+     */
     private byte[] readStringSource(String source) throws Exception {
         String value = source == null ? "" : source.trim();
         if (value.isEmpty()) {
@@ -562,6 +726,13 @@ final class ProgrammaticCadreDocumentWriter {
         return Base64.getDecoder().decode(base64);
     }
 
+    /**
+     * 读取输入流中的所有字节。
+     *
+     * @param inputStream 输入流
+     * @return 字节数组
+     * @throws IOException 读取失败时抛出
+     */
     private byte[] readAll(InputStream inputStream) throws IOException {
         try (InputStream in = inputStream; ByteArrayOutputStream output = new ByteArrayOutputStream()) {
             byte[] buffer = new byte[8192];
@@ -573,16 +744,36 @@ final class ProgrammaticCadreDocumentWriter {
         }
     }
 
+    /**
+     * 从数据映射中读取字符串值。
+     *
+     * @param data 数据映射
+     * @param key 键名
+     * @return 字符串值或空字符串
+     */
     private String text(Map<String, Object> data, String key) {
         Object value = data.get(key);
         return value == null ? "" : value.toString();
     }
 
+    /**
+     * 从通用映射中读取字符串值。
+     *
+     * @param data 数据映射
+     * @param key 键名
+     * @return 字符串值或空字符串
+     */
     private String mapText(Map<?, ?> data, String key) {
         Object value = data.get(key);
         return value == null ? "" : value.toString();
     }
 
+    /**
+     * 将可迭代对象中的映射元素收集为列表。
+     *
+     * @param value 可迭代对象
+     * @return 映射列表
+     */
     private List<Map<?, ?>> toMapList(Object value) {
         List<Map<?, ?>> result = new ArrayList<>();
         if (!(value instanceof Iterable<?>)) {
@@ -597,10 +788,23 @@ final class ProgrammaticCadreDocumentWriter {
         return result;
     }
 
+    /**
+     * 获取列表中指定索引的映射对象。
+     *
+     * @param list 映射列表
+     * @param index 索引
+     * @return 映射对象或空映射
+     */
     private Map<?, ?> mapAt(List<Map<?, ?>> list, int index) {
         return index < list.size() ? list.get(index) : Collections.emptyMap();
     }
 
+    /**
+     * 将可迭代对象转换为字符串列表。
+     *
+     * @param value 可迭代对象
+     * @return 字符串列表
+     */
     private List<String> toStringList(Object value) {
         List<String> result = new ArrayList<>();
         if (!(value instanceof Iterable<?>)) {
@@ -613,6 +817,12 @@ final class ProgrammaticCadreDocumentWriter {
         return result;
     }
 
+    /**
+     * 将字符串列表拼接为多行文本。
+     *
+     * @param values 字符串列表
+     * @return 多行文本
+     */
     private String joinLines(List<String> values) {
         StringBuilder text = new StringBuilder();
         for (String value : values) {
@@ -624,22 +834,54 @@ final class ProgrammaticCadreDocumentWriter {
         return text.toString();
     }
 
+    /**
+     * 构造默认行规格。
+     *
+     * @param cells 单元格规格
+     * @return 行规格对象
+     */
     private RowSpec row(CellSpec... cells) {
         return row(0, cells);
     }
 
+    /**
+     * 构造带高度的行规格。
+     *
+     * @param heightDxa 行高度（DXA）
+     * @param cells 单元格规格
+     * @return 行规格对象
+     */
     private RowSpec row(int heightDxa, CellSpec... cells) {
         return new RowSpec(heightDxa, Arrays.asList(cells));
     }
 
+    /**
+     * 创建文本单元格规格。
+     *
+     * @param text 文本内容
+     * @return 单元格规格
+     */
     private CellSpec text(String text) {
         return new CellSpec(text, null, 0, 0);
     }
 
+    /**
+     * 创建空单元格规格。
+     *
+     * @return 单元格规格
+     */
     private CellSpec empty() {
         return text("");
     }
 
+    /**
+     * 创建图片单元格规格。
+     *
+     * @param imageBytes 图片字节数组
+     * @param widthEmu 图片宽度（EMU）
+     * @param heightEmu 图片高度（EMU）
+     * @return 单元格规格
+     */
     private CellSpec image(byte[] imageBytes, int widthEmu, int heightEmu) {
         return new CellSpec("", imageBytes, widthEmu, heightEmu);
     }
