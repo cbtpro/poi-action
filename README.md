@@ -10,6 +10,8 @@
 - **丰富的元素支持**：段落、标题、表格、图片等
 - **表格高级功能**：单元格合并、循环填充等
 - **图片灵活处理**：支持本地文件、URL、Base64 等多种图片源
+- **固定版式工具**：提供 DOCX 页面设置、固定宽度表格、跨列、纵向合并、表格内图片等公共能力
+- **批量生成**：模板读取一次后复用，支持多线程写入和进度统计
 - **设计模式应用**：工厂模式、建造者模式、模板方法模式
 
 ## 项目结构
@@ -22,7 +24,8 @@ poi-action/
 │       ├── builder/         # 建造者实现
 │       ├── factory/         # 工厂类
 │       ├── doc/             # DOC 格式生成器
-│       ├── docx/            # DOCX 格式生成器
+│       ├── docx/            # DOCX 格式生成器、模板生成器
+│       │   └── util/        # DOCX 页面、固定表格、图片来源等公共工具
 │       ├── constant/        # 常量定义
 │       └── exception/       # 异常类
 ├── playground/              # 演示和测试模块
@@ -45,12 +48,18 @@ poi-action/
 mvn clean install
 
 # 运行演示（编程式生成）
-cd playground
-mvn exec:java -Dexec.mainClass=com.chenbitao.word.playground.demo.DemoMain
+mvn -pl playground exec:java -Dexec.mainClass=com.chenbitao.word.playground.demo.DemoMain
 
 # 运行演示（模板式生成）
-cd playground
-mvn exec:java -Dexec.mainClass=com.chenbitao.word.playground.demo.TemplateDemo
+mvn -pl playground exec:java -Dexec.mainClass=com.chenbitao.word.playground.demo.TemplateDemo
+
+# 运行批量生成演示，输出到 playground/target/out
+mvn -pl playground exec:java \
+  -Dexec.mainClass=com.chenbitao.word.playground.demo.TemplateBatchDemo \
+  -Dexec.args="1000 8"
+
+# 启动 Spring Boot 演示服务，actuator 仅在 dev/test 生效
+mvn -pl playground spring-boot:run -Dspring-boot.run.profiles=dev
 ```
 
 ## API 文档
@@ -225,6 +234,16 @@ public class TemplateWordGenerator {
 | `${list.field}` | 列表循环填充 | `${education.degree}` |
 | `${picture}` | 图片替换 | `${photo}` |
 
+如果图片值为空或未传入，图片占位符会被清空。图片尺寸属于业务数据，推荐在构造 `Picture` 时显式传入：
+
+```java
+data.put("photo", TemplateWordGenerator.picture(
+    source,
+    Units.toEMU(80),
+    Units.toEMU(100)
+));
+```
+
 #### 使用示例
 
 ```java
@@ -266,6 +285,43 @@ data.put("photo", TemplateWordGenerator.picture(
 // 渲染并保存
 generator.render(data);
 generator.save("output.docx");
+```
+
+---
+
+### DOCX 公共工具 - docx.util
+
+`word-generator` 提供了一组不绑定业务场景的 DOCX 工具，适合编程式生成复杂固定版式时复用。
+
+| 类名 | 说明 | 典型用途 |
+|------|------|----------|
+| `DocxPageUtils` | 页面和字体工具 | 设置纸张、页边距、居中标题、中文字体 |
+| `DocxFixedTable` | 固定宽度表格渲染器 | 指定列宽、行高、跨列、纵向合并、表格内图片 |
+| `ImageSourceUtils` | 图片来源读取和格式转换 | 读取文件、路径、URL、URI、Base64、字节数组、输入流，并转换为 PNG |
+
+#### 固定表格示例
+
+```java
+import com.chenbitao.word.docx.util.DocxFixedTable;
+import org.apache.poi.xwpf.usermodel.XWPFDocument;
+
+import java.util.Arrays;
+
+import static com.chenbitao.word.docx.util.DocxFixedTable.empty;
+import static com.chenbitao.word.docx.util.DocxFixedTable.row;
+import static com.chenbitao.word.docx.util.DocxFixedTable.text;
+
+XWPFDocument document = new XWPFDocument();
+DocxFixedTable.Options options = new DocxFixedTable.Options(new int[]{1200, 2400, 2400})
+    .tableWidthDxa(6000)
+    .cellMargins(0, 108, 0, 108)
+    .font("宋体", 12);
+
+DocxFixedTable.render(document, options, Arrays.asList(
+    row(text("姓名"), text("张三"), text("照片").vRestart()),
+    row(text("说明"), text("跨两列内容").span(2)),
+    row(text("出生年月"), text("2008-01"), empty().vContinue())
+));
 ```
 
 ---
@@ -431,6 +487,20 @@ public class TableExample {
 }
 ```
 
+### 示例 4：生成与模板同数据的编程式文档
+
+`playground` 中的 `DemoMain` 使用 `TemplateDemoData.create()` 准备和模板演示相同的数据，再由 `ProgrammaticCadreDocumentWriter` 直接编程式生成 Word。业务字段组织、干部表版式仍留在 playground demo 中，页面、固定表格、图片来源等通用能力由 `word-generator` 的 `docx.util` 提供。
+
+```shell
+mvn -pl playground exec:java -Dexec.mainClass=com.chenbitao.word.playground.demo.DemoMain
+```
+
+输出文件：
+
+```text
+playground/target/programmatic-demo.docx
+```
+
 ---
 
 ## 架构设计
@@ -464,6 +534,9 @@ public class TableExample {
 | `TemplateWordGenerator` | 模板渲染生成器 | 支持占位符和循环 |
 | `WordBuilder` | 建造者类 | 流式 API |
 | `WordGeneratorFactory` | 工厂类 | 获取生成器实例 |
+| `DocxPageUtils` | DOCX 页面工具 | 页面尺寸、边距、标题、字体 |
+| `DocxFixedTable` | DOCX 固定表格工具 | 固定列宽、跨列、纵向合并、表格图片 |
+| `ImageSourceUtils` | 图片来源工具 | 文件、URL、Base64、字节流读取和 PNG 转换 |
 
 ---
 
@@ -505,41 +578,25 @@ poi-action 在性能方面表现出色，采用了多项优化策略：
 
 ### 性能测试示例
 
-```java
-import com.chenbitao.word.builder.WordBuilder;
-import com.chenbitao.word.factory.WordGeneratorFactory;
+```shell
+# 生成 1000 个文档，8 线程写入
+mvn -pl playground exec:java \
+  -Dexec.mainClass=com.chenbitao.word.playground.demo.TemplateBatchDemo \
+  -Dexec.args="1000 8"
 
-public class PerformanceTest {
-    public static void main(String[] args) throws Exception {
-        long startTime = System.currentTimeMillis();
-        
-        // 批量生成 30 万个 Word 文档
-        for (int i = 0; i < 300_000; i++) {
-            WordBuilder builder = new WordBuilder(WordGeneratorFactory.get("docx"));
-            builder
-                .title("文档 " + i)
-                .paragraph("这是第 " + i + " 个测试文档。")
-                .paragraph("生成时间戳：" + System.currentTimeMillis())
-                .build("output/doc_" + i + ".docx");
-            
-            // 每 10000 个文档打印进度
-            if ((i + 1) % 10_000 == 0) {
-                long elapsed = System.currentTimeMillis() - startTime;
-                System.out.println("已生成 " + (i + 1) + " 个文档，耗时 " + elapsed + " ms");
-            }
-        }
-        
-        long endTime = System.currentTimeMillis();
-        long totalTime = endTime - startTime;
-        
-        System.out.println("\n=== 性能统计 ===");
-        System.out.println("总文档数: 300,000");
-        System.out.println("总耗时: " + totalTime + " ms");
-        System.out.println("平均每个文档: " + (totalTime / 300_000.0) + " ms");
-        System.out.println("吞吐量: " + (300_000_000 / totalTime) + " 文档/秒");
-    }
-}
+# 通过参数指定数量和线程数，例如生成 320000 个，8 线程写入
+mvn -pl playground exec:java \
+  -Dexec.mainClass=com.chenbitao.word.playground.demo.TemplateBatchDemo \
+  -Dexec.args="320000 8"
 ```
+
+`TemplateBatchDemo` 的优化点：
+
+- 模板文件只读取一次，后续渲染复用模板字节。
+- 示例数据只创建一次，避免批量任务把时间消耗在无关对象构造上。
+- 渲染后的文档字节一次生成，多线程负责写出不同文件。
+- 进度日志包含完成数、失败数、百分比、速度和预计剩余时间。
+- 输出目录固定为 `playground/target/out`。
 
 ---
 
@@ -552,10 +609,13 @@ public class PerformanceTest {
 mvn test
 
 # 运行指定测试类
-cd playground
-mvn test -Dtest=WordBuilderTest
-mvn test -Dtest=TemplateWordGeneratorTest
-mvn test -Dtest=WordGeneratorFactoryTest
+mvn -pl playground test -Dtest=WordBuilderTest
+mvn -pl playground test -Dtest=TemplateWordGeneratorTest
+mvn -pl playground test -Dtest=WordGeneratorFactoryTest
+mvn -pl playground test -Dtest=ProgrammaticCadreDocumentWriterTest
+
+# 运行 word-generator 的 DOCX 公共工具测试
+mvn -pl word-generator test -Dtest=DocxPageUtilsTest,DocxFixedTableTest,ImageSourceUtilsTest
 ```
 
 ### Actuator
