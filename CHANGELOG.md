@@ -4,6 +4,32 @@
 
 ### Added
 
+- 新增 PowerPoint 97-2003 演示文稿生成能力：
+  - `PresentationGenerator` 作为演示文稿生成统一接口。
+  - `HslfPresentationGenerator` 支持 `.ppt` 文件生成。
+  - `PresentationGeneratorFactory` 支持按 `ppt` 类型创建演示文稿生成器。
+  - `PresentationException` 用于封装演示文稿生成和写出异常。
+- 新增 playground PowerPoint 演示：
+  - `PptProjectReportDemo` 生成包含封面、文本要点、表格和图片的 `.ppt` 项目汇报。
+- 新增 PowerPoint 相关测试：
+  - 覆盖 `.ppt` 标题页、文本页、表格页、图片页生成结果。
+  - 覆盖 playground 中 PPT demo 生成结果。
+
+### Changed
+
+- 更新 README：
+  - 将 PowerPoint 97-2003 `.ppt` 从待办文档类型移入已支持文档类型。
+  - 增加 `HslfPresentationGenerator` API 示例。
+  - 增加 playground PPT demo 运行命令和测试命令。
+
+### Verified
+
+- `mvn -pl word-generator test`
+- `mvn -pl playground -am test`
+- `mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.presentation.PptProjectReportDemo"`
+
+### Added
+
 - 新增 Excel 生成能力：
   - `ExcelGenerator` 作为电子表格生成统一接口。
   - `XlsWorkbookGenerator` 支持 Excel 97-2003 `.xls` 文件生成。

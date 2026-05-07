@@ -1,12 +1,12 @@
 # poi-action
 
-基于 Apache POI 的 Word 文档生成库，支持编程式生成和模板式生成两种方式。提供流式 API、模板引擎、工厂模式等设计模式，让 Word 文档生成变得简单高效。
+基于 Apache POI 的文档生成库，支持 Word、Excel 和 PowerPoint 的编程式生成。提供流式 API、模板引擎、工厂模式等设计模式，让 Office 文档生成变得简单高效。
 
 ## 功能特性
 
 - **编程式生成**：使用流式 API（Builder 模式）直接构建 Word 文档
 - **模板式生成**：基于 Word 模板进行数据填充和循环渲染
-- **多格式支持**：支持 DOC 和 DOCX 两种 Word 文档格式
+- **多格式支持**：支持 Word、Excel 和 PowerPoint 常见格式
 - **丰富的元素支持**：段落、标题、表格、图片等
 - **表格高级功能**：单元格合并、循环填充等
 - **图片灵活处理**：支持本地文件、URL、Base64 等多种图片源
@@ -24,6 +24,7 @@
 | Word Open XML 文档 | `.docx` | XWPF | 编程式生成和模板式生成，支持段落、标题、表格、图片、占位符渲染、列表循环、固定版式工具 |
 | Excel 97-2003 工作簿 | `.xls` | HSSF | 表格数据写入、表头样式、公式、自动列宽 |
 | Excel Open XML 工作簿 | `.xlsx` | XSSF / SXSSF | 表格数据写入、表头样式、公式、自动列宽、流式大数据量写出 |
+| PowerPoint 97-2003 演示文稿 | `.ppt` | HSLF | 标题页、文本页、表格页、图片页 |
 
 ## 待办文档类型
 
@@ -31,7 +32,6 @@ Apache POI 还覆盖多种 Office/OLE2/OOXML 文档格式，当前项目尚未�
 
 | 类型 | 文件扩展名 | POI 组件 | 计划能力 |
 |------|------------|----------|----------|
-| PowerPoint 97-2003 演示文稿 | `.ppt` | HSLF | 幻灯片文本、图片、表格生成 |
 | PowerPoint Open XML 演示文稿 | `.pptx` | XSLF | 幻灯片模板渲染、图片和图形元素生成 |
 | Visio 绘图 | `.vsd` / `.vsdx` | HDGF / XDGF | 图形结构读取和基础信息提取 |
 | Outlook 邮件 | `.msg` | HSMF | 邮件主题、正文、附件信息提取 |
@@ -50,6 +50,8 @@ poi-action/
 │       ├── doc/             # DOC 格式生成器
 │       ├── docx/            # DOCX 格式生成器、模板生成器
 │       │   └── util/        # DOCX 页面、固定表格、图片来源等公共工具
+│       ├── excel/           # XLS / XLSX 工作簿生成器
+│       ├── presentation/    # PPT 演示文稿生成器
 │       ├── constant/        # 常量定义
 │       └── exception/       # 异常类
 ├── playground/              # 演示和测试模块
@@ -58,6 +60,7 @@ poi-action/
 │           ├── batch/       # 批量生成演示
 │           ├── excel/       # Excel 生成演示
 │           ├── model/       # 演示数据模型
+│           ├── presentation/# PowerPoint 生成演示
 │           ├── programmatic/# 编程式固定版式生成演示
 │           ├── template/    # 模板渲染演示和演示数据
 │           └── web/         # Spring Web 下载演示
@@ -93,6 +96,9 @@ mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.dem
 
 # 运行 Excel Open XML 流式生成演示，输出到 playground/target/excel-large-sales-demo.xlsx
 mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.excel.XlsxLargeSalesReportDemo" "-Dexec.args=1000"
+
+# 运行 PowerPoint 97-2003 生成演示，输出到 playground/target/project-report-demo.ppt
+mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.presentation.PptProjectReportDemo"
 
 # 启动 Spring Boot 演示服务，actuator 仅在 dev/test 生效
 mvn -pl playground spring-boot:run -Dspring-boot.run.profiles=dev
@@ -436,6 +442,44 @@ playground/target/excel-large-sales-demo.xlsx
 
 ---
 
+### PowerPoint 97-2003 生成器 - HslfPresentationGenerator
+
+`HslfPresentationGenerator` 基于 POI HSLF 生成 `.ppt` 文件，支持标题页、文本页、表格页和图片页。
+
+```java
+import com.chenbitao.word.factory.PresentationGeneratorFactory;
+import com.chenbitao.word.presentation.PresentationGenerator;
+import java.util.Arrays;
+
+PresentationGenerator generator = PresentationGeneratorFactory.get("ppt");
+generator.createPresentation();
+generator.addTitleSlide("项目汇报", "PowerPoint 97-2003 生成演示");
+generator.addTextSlide("新增能力", Arrays.asList(
+    "支持标题页",
+    "支持文本页",
+    "支持表格页和图片页"
+));
+generator.addTableSlide("格式支持", Arrays.asList(
+    Arrays.asList("类型", "格式", "状态"),
+    Arrays.asList("PowerPoint", ".ppt", "已支持")
+));
+generator.save("project-report.ppt");
+```
+
+playground 中也提供了可运行的 PPT 演示：
+
+```shell
+mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.presentation.PptProjectReportDemo"
+```
+
+输出文件：
+
+```text
+playground/target/project-report-demo.ppt
+```
+
+---
+
 ### 常量类 - BlankConstants
 
 **BlankConstants** 定义了常用的空白/占位符常量。
@@ -642,8 +686,11 @@ playground/target/programmatic-demo.docx
 | `DocxWordGenerator` | DOCX 格式生成器 | 推荐使用，现代格式 |
 | `DocWordGenerator` | DOC 格式生成器 | 兼容旧版本 Office |
 | `TemplateWordGenerator` | 模板渲染生成器 | 支持占位符和循环 |
+| `HslfPresentationGenerator` | PPT 格式生成器 | 标题页、文本页、表格页、图片页 |
 | `WordBuilder` | 建造者类 | 流式 API |
 | `WordGeneratorFactory` | 工厂类 | 获取生成器实例 |
+| `SpreadsheetGeneratorFactory` | 电子表格工厂类 | 获取 XLS / XLSX 生成器实例 |
+| `PresentationGeneratorFactory` | 演示文稿工厂类 | 获取 PPT 生成器实例 |
 | `DocxPageUtils` | DOCX 页面工具 | 页面尺寸、边距、标题、字体 |
 | `DocxFixedTable` | DOCX 固定表格工具 | 固定列宽、跨列、纵向合并、表格图片 |
 | `ImageSourceUtils` | 图片来源工具 | 文件、URL、Base64、字节流读取和 PNG 转换 |
@@ -725,6 +772,7 @@ mvn -pl playground test -Dtest=WordGeneratorFactoryTest
 mvn -pl playground test -Dtest=ProgrammaticCadreDocumentWriterTest
 mvn -pl playground -am test -Dtest=XlsSalesReportDemoTest
 mvn -pl playground -am test -Dtest=XlsxLargeSalesReportDemoTest
+mvn -pl playground -am test -Dtest=PptProjectReportDemoTest
 
 # 运行 word-generator 的 DOCX 公共工具测试
 mvn -pl word-generator test -Dtest=DocxPageUtilsTest,DocxFixedTableTest,ImageSourceUtilsTest
