@@ -25,6 +25,7 @@
 | Excel 97-2003 工作簿 | `.xls` | HSSF | 表格数据写入、表头样式、公式、自动列宽 |
 | Excel Open XML 工作簿 | `.xlsx` | XSSF / SXSSF | 表格数据写入、表头样式、公式、自动列宽、流式大数据量写出 |
 | PowerPoint 97-2003 演示文稿 | `.ppt` | HSLF | 标题页、文本页、表格页、图片页 |
+| PowerPoint Open XML 演示文稿 | `.pptx` | XSLF | 标题页、文本页、表格页、图片页 |
 
 ## 待办文档类型
 
@@ -32,7 +33,6 @@ Apache POI 还覆盖多种 Office/OLE2/OOXML 文档格式，当前项目尚未�
 
 | 类型 | 文件扩展名 | POI 组件 | 计划能力 |
 |------|------------|----------|----------|
-| PowerPoint Open XML 演示文稿 | `.pptx` | XSLF | 幻灯片模板渲染、图片和图形元素生成 |
 | Visio 绘图 | `.vsd` / `.vsdx` | HDGF / XDGF | 图形结构读取和基础信息提取 |
 | Outlook 邮件 | `.msg` | HSMF | 邮件主题、正文、附件信息提取 |
 | Publisher 文档 | `.pub` | HPBF | 元数据和文本内容提取 |
@@ -99,6 +99,9 @@ mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.dem
 
 # 运行 PowerPoint 97-2003 生成演示，输出到 playground/target/project-report-demo.ppt
 mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.presentation.PptProjectReportDemo"
+
+# 运行 PowerPoint Open XML 生成演示，输出到 playground/target/project-report-demo.pptx
+mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.presentation.PptxProjectReportDemo"
 
 # 启动 Spring Boot 演示服务，actuator 仅在 dev/test 生效
 mvn -pl playground spring-boot:run -Dspring-boot.run.profiles=dev
@@ -480,6 +483,44 @@ playground/target/project-report-demo.ppt
 
 ---
 
+### PowerPoint Open XML 生成器 - XslfPresentationGenerator
+
+`XslfPresentationGenerator` 基于 POI XSLF 生成 `.pptx` 文件，支持标题页、文本页、表格页和图片页。
+
+```java
+import com.chenbitao.word.factory.PresentationGeneratorFactory;
+import com.chenbitao.word.presentation.PresentationGenerator;
+import java.util.Arrays;
+
+PresentationGenerator generator = PresentationGeneratorFactory.get("pptx");
+generator.createPresentation();
+generator.addTitleSlide("项目汇报", "PowerPoint Open XML 生成演示");
+generator.addTextSlide("新增能力", Arrays.asList(
+    "支持标题页",
+    "支持文本页",
+    "支持表格页和图片页"
+));
+generator.addTableSlide("格式支持", Arrays.asList(
+    Arrays.asList("类型", "格式", "状态"),
+    Arrays.asList("PowerPoint", ".pptx", "已支持")
+));
+generator.save("project-report.pptx");
+```
+
+playground 中也提供了可运行的 PPTX 演示：
+
+```shell
+mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.presentation.PptxProjectReportDemo"
+```
+
+输出文件：
+
+```text
+playground/target/project-report-demo.pptx
+```
+
+---
+
 ### 常量类 - BlankConstants
 
 **BlankConstants** 定义了常用的空白/占位符常量。
@@ -687,6 +728,7 @@ playground/target/programmatic-demo.docx
 | `DocWordGenerator` | DOC 格式生成器 | 兼容旧版本 Office |
 | `TemplateWordGenerator` | 模板渲染生成器 | 支持占位符和循环 |
 | `HslfPresentationGenerator` | PPT 格式生成器 | 标题页、文本页、表格页、图片页 |
+| `XslfPresentationGenerator` | PPTX 格式生成器 | 标题页、文本页、表格页、图片页 |
 | `WordBuilder` | 建造者类 | 流式 API |
 | `WordGeneratorFactory` | 工厂类 | 获取生成器实例 |
 | `SpreadsheetGeneratorFactory` | 电子表格工厂类 | 获取 XLS / XLSX 生成器实例 |
@@ -773,6 +815,7 @@ mvn -pl playground test -Dtest=ProgrammaticCadreDocumentWriterTest
 mvn -pl playground -am test -Dtest=XlsSalesReportDemoTest
 mvn -pl playground -am test -Dtest=XlsxLargeSalesReportDemoTest
 mvn -pl playground -am test -Dtest=PptProjectReportDemoTest
+mvn -pl playground -am test -Dtest=PptxProjectReportDemoTest
 
 # 运行 word-generator 的 DOCX 公共工具测试
 mvn -pl word-generator test -Dtest=DocxPageUtilsTest,DocxFixedTableTest,ImageSourceUtilsTest

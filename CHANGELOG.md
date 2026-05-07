@@ -4,6 +4,30 @@
 
 ### Added
 
+- 新增 PowerPoint Open XML 演示文稿生成能力：
+  - `XslfPresentationGenerator` 支持 `.pptx` 文件生成。
+  - `PresentationGeneratorFactory` 支持按 `pptx` 类型创建演示文稿生成器。
+- 新增 playground PowerPoint Open XML 演示：
+  - `PptxProjectReportDemo` 生成包含封面、文本要点、表格和图片的 `.pptx` 项目汇报。
+- 新增 PPTX 相关测试：
+  - 覆盖 `.pptx` 标题页、文本页、表格页、图片页生成结果。
+  - 覆盖 playground 中 PPTX demo 生成结果。
+
+### Changed
+
+- 更新 README：
+  - 将 PowerPoint Open XML `.pptx` 从待办文档类型移入已支持文档类型。
+  - 增加 `XslfPresentationGenerator` API 示例。
+  - 增加 playground PPTX demo 运行命令和测试命令。
+
+### Verified
+
+- `mvn -pl word-generator test`
+- `mvn -pl playground -am test`
+- `mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.presentation.PptxProjectReportDemo"`
+
+### Added
+
 - 新增 PowerPoint 97-2003 演示文稿生成能力：
   - `PresentationGenerator` 作为演示文稿生成统一接口。
   - `HslfPresentationGenerator` 支持 `.ppt` 文件生成。
