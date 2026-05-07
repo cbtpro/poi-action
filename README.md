@@ -1,12 +1,12 @@
 # poi-action
 
-基于 Apache POI 的文档生成库，支持 Word、Excel 和 PowerPoint 的编程式生成。提供流式 API、模板引擎、工厂模式等设计模式，让 Office 文档生成变得简单高效。
+基于 Apache POI 的文档处理库，支持 Word、Excel、PowerPoint 的编程式生成，以及 Outlook 邮件信息提取。提供流式 API、模板引擎、工厂模式等设计模式，让 Office 文档处理变得简单高效。
 
 ## 功能特性
 
 - **编程式生成**：使用流式 API（Builder 模式）直接构建 Word 文档
 - **模板式生成**：基于 Word 模板进行数据填充和循环渲染
-- **多格式支持**：支持 Word、Excel 和 PowerPoint 常见格式
+- **多格式支持**：支持 Word、Excel、PowerPoint 和 Outlook 常见格式
 - **丰富的元素支持**：段落、标题、表格、图片等
 - **表格高级功能**：单元格合并、循环填充等
 - **图片灵活处理**：支持本地文件、URL、Base64 等多种图片源
@@ -16,7 +16,7 @@
 
 ## 支持的文档类型
 
-当前项目围绕 Word 文档生成能力封装，`WordGeneratorFactory` 已支持以下类型：
+当前项目围绕 Office 文档生成和信息提取能力封装，已支持以下类型：
 
 | 类型 | 文件扩展名 | POI 组件 | 当前能力 |
 |------|------------|----------|----------|
@@ -26,6 +26,7 @@
 | Excel Open XML 工作簿 | `.xlsx` | XSSF / SXSSF | 表格数据写入、表头样式、公式、自动列宽、流式大数据量写出 |
 | PowerPoint 97-2003 演示文稿 | `.ppt` | HSLF | 标题页、文本页、表格页、图片页 |
 | PowerPoint Open XML 演示文稿 | `.pptx` | XSLF | 标题页、文本页、表格页、图片页 |
+| Outlook 邮件 | `.msg` | HSMF | 邮件主题、发件人、收件人、正文、附件摘要信息提取 |
 
 ## 待办文档类型
 
@@ -34,7 +35,6 @@ Apache POI 还覆盖多种 Office/OLE2/OOXML 文档格式，当前项目尚未�
 | 类型 | 文件扩展名 | POI 组件 | 计划能力 |
 |------|------------|----------|----------|
 | Visio 绘图 | `.vsd` / `.vsdx` | HDGF / XDGF | 图形结构读取和基础信息提取 |
-| Outlook 邮件 | `.msg` | HSMF | 邮件主题、正文、附件信息提取 |
 | Publisher 文档 | `.pub` | HPBF | 元数据和文本内容提取 |
 | PDF 文档 | `.pdf` | 非 POI 原生能力 | 如需支持，建议接入 PDFBox、OpenPDF 或 LibreOffice 转换链路 |
 
@@ -51,6 +51,7 @@ poi-action/
 │       ├── docx/            # DOCX 格式生成器、模板生成器
 │       │   └── util/        # DOCX 页面、固定表格、图片来源等公共工具
 │       ├── excel/           # XLS / XLSX 工作簿生成器
+│       ├── outlook/         # Outlook MSG 邮件读取器
 │       ├── presentation/    # PPT 演示文稿生成器
 │       ├── constant/        # 常量定义
 │       └── exception/       # 异常类
@@ -60,6 +61,7 @@ poi-action/
 │           ├── batch/       # 批量生成演示
 │           ├── excel/       # Excel 生成演示
 │           ├── model/       # 演示数据模型
+│           ├── outlook/     # Outlook 邮件读取演示
 │           ├── presentation/# PowerPoint 生成演示
 │           ├── programmatic/# 编程式固定版式生成演示
 │           ├── template/    # 模板渲染演示和演示数据
@@ -102,6 +104,9 @@ mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.dem
 
 # 运行 PowerPoint Open XML 生成演示，输出到 playground/target/project-report-demo.pptx
 mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.presentation.PptxProjectReportDemo"
+
+# 运行 Outlook MSG 邮件读取演示，输出到 playground/target/outlook
+mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.outlook.OutlookMessageExtractDemo"
 
 # 启动 Spring Boot 演示服务，actuator 仅在 dev/test 生效
 mvn -pl playground spring-boot:run -Dspring-boot.run.profiles=dev
@@ -521,6 +526,38 @@ playground/target/project-report-demo.pptx
 
 ---
 
+### Outlook 邮件读取器 - OutlookMessageReader
+
+`OutlookMessageReader` 基于 POI HSMF 读取 `.msg` 文件，支持提取邮件主题、发件人、收件人、正文和附件摘要信息。
+
+```java
+import com.chenbitao.word.factory.OutlookMessageReaderFactory;
+import com.chenbitao.word.outlook.OutlookMessageInfo;
+import com.chenbitao.word.outlook.OutlookMessageReader;
+
+OutlookMessageReader reader = OutlookMessageReaderFactory.get("msg");
+OutlookMessageInfo message = reader.read("weekly-report.msg");
+
+String subject = message.getSubject();
+String textBody = message.getTextBody();
+int attachmentCount = message.getAttachmentCount();
+```
+
+playground 中也提供了可运行的 Outlook MSG 读取演示：
+
+```shell
+mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.outlook.OutlookMessageExtractDemo"
+```
+
+输出文件：
+
+```text
+playground/target/outlook/weekly-report-demo.msg
+playground/target/outlook/weekly-report-summary.txt
+```
+
+---
+
 ### 常量类 - BlankConstants
 
 **BlankConstants** 定义了常用的空白/占位符常量。
@@ -729,10 +766,12 @@ playground/target/programmatic-demo.docx
 | `TemplateWordGenerator` | 模板渲染生成器 | 支持占位符和循环 |
 | `HslfPresentationGenerator` | PPT 格式生成器 | 标题页、文本页、表格页、图片页 |
 | `XslfPresentationGenerator` | PPTX 格式生成器 | 标题页、文本页、表格页、图片页 |
+| `OutlookMessageReader` | Outlook MSG 读取器 | 邮件主题、正文、附件摘要信息提取 |
 | `WordBuilder` | 建造者类 | 流式 API |
 | `WordGeneratorFactory` | 工厂类 | 获取生成器实例 |
 | `SpreadsheetGeneratorFactory` | 电子表格工厂类 | 获取 XLS / XLSX 生成器实例 |
-| `PresentationGeneratorFactory` | 演示文稿工厂类 | 获取 PPT 生成器实例 |
+| `PresentationGeneratorFactory` | 演示文稿工厂类 | 获取 PPT / PPTX 生成器实例 |
+| `OutlookMessageReaderFactory` | Outlook 邮件读取器工厂类 | 获取 MSG 读取器实例 |
 | `DocxPageUtils` | DOCX 页面工具 | 页面尺寸、边距、标题、字体 |
 | `DocxFixedTable` | DOCX 固定表格工具 | 固定列宽、跨列、纵向合并、表格图片 |
 | `ImageSourceUtils` | 图片来源工具 | 文件、URL、Base64、字节流读取和 PNG 转换 |
@@ -816,9 +855,13 @@ mvn -pl playground -am test -Dtest=XlsSalesReportDemoTest
 mvn -pl playground -am test -Dtest=XlsxLargeSalesReportDemoTest
 mvn -pl playground -am test -Dtest=PptProjectReportDemoTest
 mvn -pl playground -am test -Dtest=PptxProjectReportDemoTest
+mvn -pl playground -am test -Dtest=OutlookMessageExtractDemoTest
 
 # 运行 word-generator 的 DOCX 公共工具测试
 mvn -pl word-generator test -Dtest=DocxPageUtilsTest,DocxFixedTableTest,ImageSourceUtilsTest
+
+# 运行 word-generator 的 Outlook MSG 读取测试
+mvn -pl word-generator test -Dtest=OutlookMessageReaderTest,OutlookMessageReaderFactoryTest
 ```
 
 ### Actuator

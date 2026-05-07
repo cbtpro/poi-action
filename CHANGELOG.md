@@ -4,6 +4,32 @@
 
 ### Added
 
+- 新增 Outlook MSG 邮件读取能力：
+  - `OutlookMessageReader` 支持读取 `.msg` 文件并提取主题、发件人、收件人、正文和附件摘要。
+  - `OutlookMessageInfo` 和 `OutlookAttachmentInfo` 用于承载邮件解析结果。
+  - `OutlookMessageReaderFactory` 支持按 `msg` 类型创建邮件读取器。
+  - `OutlookMessageException` 用于封装 MSG 读取和解析异常。
+- 新增 playground Outlook 邮件读取演示：
+  - `OutlookMessageExtractDemo` 生成最小 MSG 示例文件并输出解析摘要。
+- 新增 Outlook 相关测试：
+  - 覆盖 MSG 主题、发件人、收件人、正文和附件摘要提取结果。
+  - 覆盖 playground 中 Outlook demo 生成结果。
+
+### Changed
+
+- 更新 README：
+  - 将 Outlook `.msg` 从待办文档类型移入已支持文档类型。
+  - 增加 `OutlookMessageReader` API 示例。
+  - 增加 playground Outlook demo 运行命令和测试命令。
+
+### Verified
+
+- `mvn -pl word-generator test`
+- `mvn -pl playground -am test`
+- `mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.outlook.OutlookMessageExtractDemo"`
+
+### Added
+
 - 新增 PowerPoint Open XML 演示文稿生成能力：
   - `XslfPresentationGenerator` 支持 `.pptx` 文件生成。
   - `PresentationGeneratorFactory` 支持按 `pptx` 类型创建演示文稿生成器。
