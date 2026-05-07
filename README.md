@@ -595,6 +595,20 @@ mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.dem
 playground/target/pdf-report-demo.pdf
 ```
 
+PDFBox / fontbox 的字体扫描日志使用独立的 Spring 配置文件管理，并由不同环境的 `application-*.yml` 引入：
+
+- 默认配置：`application-logging.yml`，PDFBox / fontbox 只输出 `WARN` 及以上级别。
+- 开发配置：`application-logging-dev.yml`，输出到 `INFO`，比生产更详细，但不打印字体扫描 DEBUG。
+- 生产配置：`application-logging-prod.yml`，保持简洁。
+- 测试配置：`application-logging-test.yml`，保持单测输出简洁。
+
+需要临时排查 PDF 生成细节时，可以通过系统属性覆盖：
+
+```shell
+mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.pdf.PdfProjectReportDemo" "-Dpdfbox.log.level=DEBUG"
+mvn -pl word-generator test "-Dtest=PdfBoxDocumentGeneratorTest" "-Dpdfbox.log.level=DEBUG"
+```
+
 ---
 
 ### 常量类 - BlankConstants

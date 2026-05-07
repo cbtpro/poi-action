@@ -2,6 +2,7 @@ package com.chenbitao.word.pdf;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import javax.imageio.ImageIO;
@@ -15,6 +16,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class PdfBoxDocumentGeneratorTest {
+
+    @BeforeClass
+    public static void configurePdfBoxLogging() {
+        PdfBoxTestLoggingConfigurer.configure();
+    }
 
     @Test
     public void saveWritesPdfWithTextTableAndImage() throws Exception {

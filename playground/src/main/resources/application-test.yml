@@ -1,5 +1,6 @@
 spring:
   config:
+    import: optional:classpath:application-logging-test.yml
     activate:
       on-profile: test
 

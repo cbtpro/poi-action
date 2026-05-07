@@ -43,6 +43,7 @@ public class PdfProjectReportDemo {
      * @throws Exception 如果目录创建、图片生成或文件写出失败
      */
     public static void generate(Path outputPath) throws Exception {
+        PdfBoxLoggingConfigurer.configure();
         Files.createDirectories(outputPath.getParent());
 
         PdfDocumentGenerator generator = PdfDocumentGeneratorFactory.get("pdf");
