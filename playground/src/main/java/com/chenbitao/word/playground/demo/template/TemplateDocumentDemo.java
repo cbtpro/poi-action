@@ -1,4 +1,4 @@
-package com.chenbitao.word.playground.demo;
+package com.chenbitao.word.playground.demo.template;
 
 import com.chenbitao.word.docx.TemplateWordGenerator;
 import lombok.extern.slf4j.Slf4j;
@@ -9,11 +9,14 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 @Slf4j
-public class TemplateDemo {
+public class TemplateDocumentDemo {
 
+    /**
+     * 模板渲染演示入口，默认读取 classpath 下的 {@code /template.docx}。
+     */
     public static void main(String[] args) throws Exception {
         TemplateWordGenerator generator = new TemplateWordGenerator(loadTemplate());
-        generator.render(TemplateDemoData.create());
+        generator.render(CadreTemplateDemoData.create());
         saveDocument(generator);
 
         log.info("文档生成完成");
@@ -31,7 +34,7 @@ public class TemplateDemo {
                 : templateName;
 
         // 从classpath下加载资源
-        InputStream inputStream = TemplateDemo.class.getResourceAsStream(template);
+        InputStream inputStream = TemplateDocumentDemo.class.getResourceAsStream(template);
 
         // 为空则抛出明确异常
         if (inputStream == null) {

@@ -1,4 +1,4 @@
-package com.chenbitao.word.playground.demo;
+package com.chenbitao.word.playground.demo.batch;
 
 import com.chenbitao.word.builder.WordBuilder;
 import com.chenbitao.word.docx.DocxWordGenerator;
@@ -25,6 +25,12 @@ public class ThreadPoolWordBatchDemo {
     private static final int PROGRESS_INTERVAL_SECONDS = 3;
     private static final Path OUTPUT_DIR = Paths.get("target", "thread-pool-out");
 
+    /**
+     * 线程池批量生成演示入口。
+     *
+     * <p>该演示每个文件都重新构建一个简单文档，用来展示生成器实例隔离的并发写入方式；
+     * 模板复用型批量场景见 {@link TemplateBatchDocumentDemo}。</p>
+     */
     public static void main(String[] args) throws Exception {
         int count = parseCount(args);
         int threads = parseThreads(args);
@@ -97,6 +103,7 @@ public class ThreadPoolWordBatchDemo {
         Path output = OUTPUT_DIR.resolve(fileName);
 
         WordBuilder builder = new WordBuilder(new DocxWordGenerator());
+        // 每个任务独立持有 DocxWordGenerator，避免多线程共享可变文档对象。
         builder.title("批量文档示例 " + index)
                 .paragraph("这是第 " + index + " 个批量生成的 Word 文档。")
                 .paragraph("线程池并发写入可以显著提高大批量文档生成的吞吐量。")

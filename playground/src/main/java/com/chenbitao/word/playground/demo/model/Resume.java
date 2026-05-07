@@ -1,4 +1,4 @@
-package com.chenbitao.word.playground.demo;
+package com.chenbitao.word.playground.demo.model;
 
 import lombok.Builder;
 import lombok.Data;
@@ -6,8 +6,9 @@ import lombok.Data;
 import java.util.List;
 
 /**
- * 简历数据模型类
- * 包含简历的基本信息，如姓名、联系方式、教育经历、工作经历和技能等
+ * 简历下载接口的演示数据模型。
+ *
+ * <p>当前 Controller 仍复用干部模板生成文件，该模型预留给后续简历模板演示使用。</p>
  */
 @Data
 @Builder

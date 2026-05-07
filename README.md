@@ -14,6 +14,30 @@
 - **批量生成**：模板读取一次后复用，支持多线程写入和进度统计
 - **设计模式应用**：工厂模式、建造者模式、模板方法模式
 
+## 支持的文档类型
+
+当前项目围绕 Word 文档生成能力封装，`WordGeneratorFactory` 已支持以下类型：
+
+| 类型 | 文件扩展名 | POI 组件 | 当前能力 |
+|------|------------|----------|----------|
+| Word 97-2003 文档 | `.doc` | HWPF | 编程式生成，支持段落、标题、文本表格等基础能力，表格和图片能力有限 |
+| Word Open XML 文档 | `.docx` | XWPF | 编程式生成和模板式生成，支持段落、标题、表格、图片、占位符渲染、列表循环、固定版式工具 |
+| Excel 97-2003 工作簿 | `.xls` | HSSF | 表格数据写入、表头样式、公式、自动列宽 |
+| Excel Open XML 工作簿 | `.xlsx` | XSSF / SXSSF | 表格数据写入、表头样式、公式、自动列宽、流式大数据量写出 |
+
+## 待办文档类型
+
+Apache POI 还覆盖多种 Office/OLE2/OOXML 文档格式，当前项目尚未封装这些能力，后续可按优先级扩展：
+
+| 类型 | 文件扩展名 | POI 组件 | 计划能力 |
+|------|------------|----------|----------|
+| PowerPoint 97-2003 演示文稿 | `.ppt` | HSLF | 幻灯片文本、图片、表格生成 |
+| PowerPoint Open XML 演示文稿 | `.pptx` | XSLF | 幻灯片模板渲染、图片和图形元素生成 |
+| Visio 绘图 | `.vsd` / `.vsdx` | HDGF / XDGF | 图形结构读取和基础信息提取 |
+| Outlook 邮件 | `.msg` | HSMF | 邮件主题、正文、附件信息提取 |
+| Publisher 文档 | `.pub` | HPBF | 元数据和文本内容提取 |
+| PDF 文档 | `.pdf` | 非 POI 原生能力 | 如需支持，建议接入 PDFBox、OpenPDF 或 LibreOffice 转换链路 |
+
 ## 项目结构
 
 ```
@@ -31,6 +55,12 @@ poi-action/
 ├── playground/              # 演示和测试模块
 │   └── src/main/java/com/chenbitao/word/playground/
 │       └── demo/            # 演示示例
+│           ├── batch/       # 批量生成演示
+│           ├── excel/       # Excel 生成演示
+│           ├── model/       # 演示数据模型
+│           ├── programmatic/# 编程式固定版式生成演示
+│           ├── template/    # 模板渲染演示和演示数据
+│           └── web/         # Spring Web 下载演示
 └── pom.xml                  # Maven 项目配置
 ```
 
@@ -48,15 +78,21 @@ poi-action/
 mvn clean install
 
 # 运行演示（编程式生成）
-mvn -pl playground exec:java -Dexec.mainClass=com.chenbitao.word.playground.demo.DemoMain
+mvn -pl playground exec:java -Dexec.mainClass=com.chenbitao.word.playground.demo.programmatic.ProgrammaticCadreDocumentDemo
 
 # 运行演示（模板式生成）
-mvn -pl playground exec:java -Dexec.mainClass=com.chenbitao.word.playground.demo.TemplateDemo
+mvn -pl playground exec:java -Dexec.mainClass=com.chenbitao.word.playground.demo.template.TemplateDocumentDemo
 
 # 运行批量生成演示，输出到 playground/target/out
 mvn -pl playground exec:java \
-  -Dexec.mainClass=com.chenbitao.word.playground.demo.TemplateBatchDemo \
+  -Dexec.mainClass=com.chenbitao.word.playground.demo.batch.TemplateBatchDocumentDemo \
   -Dexec.args="1000 8"
+
+# 运行 Excel 97-2003 生成演示，输出到 playground/target/excel-sales-demo.xls
+mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.excel.XlsSalesReportDemo"
+
+# 运行 Excel Open XML 流式生成演示，输出到 playground/target/excel-large-sales-demo.xlsx
+mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.excel.XlsxLargeSalesReportDemo" "-Dexec.args=1000"
 
 # 启动 Spring Boot 演示服务，actuator 仅在 dev/test 生效
 mvn -pl playground spring-boot:run -Dspring-boot.run.profiles=dev
@@ -252,7 +288,7 @@ import java.io.InputStream;
 import java.util.*;
 
 // 加载模板
-InputStream templateStream = TemplateDemo.class
+InputStream templateStream = TemplateDocumentDemo.class
     .getResourceAsStream("/template.docx");
 
 // 创建模板生成器
@@ -322,6 +358,80 @@ DocxFixedTable.render(document, options, Arrays.asList(
     row(text("说明"), text("跨两列内容").span(2)),
     row(text("出生年月"), text("2008-01"), empty().vContinue())
 ));
+```
+
+---
+
+### Excel 97-2003 生成器 - XlsWorkbookGenerator
+
+`XlsWorkbookGenerator` 基于 POI HSSF 生成 `.xls` 文件，适合轻量表格导出场景。
+
+```java
+import com.chenbitao.word.excel.ExcelGenerator;
+import com.chenbitao.word.factory.SpreadsheetGeneratorFactory;
+import java.util.Arrays;
+
+ExcelGenerator generator = SpreadsheetGeneratorFactory.get("xls");
+generator.createWorkbook();
+generator.addHeaderRow("销售数据", Arrays.asList("产品", "数量", "单价", "小计"));
+generator.addRows("销售数据", Arrays.asList(
+    Arrays.asList("A", 2, 5.5),
+    Arrays.asList("B", 3, 4.0)
+));
+generator.setFormula("销售数据", 1, 3, "B2*C2");
+generator.setFormula("销售数据", 2, 3, "B3*C3");
+generator.autoSizeColumns("销售数据");
+generator.save("sales.xls");
+```
+
+playground 中也提供了可运行的 XLS 演示：
+
+```shell
+mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.excel.XlsSalesReportDemo"
+```
+
+输出文件：
+
+```text
+playground/target/excel-sales-demo.xls
+```
+
+---
+
+### Excel Open XML 生成器 - XlsxWorkbookGenerator
+
+`XlsxWorkbookGenerator` 默认基于 POI XSSF 生成 `.xlsx` 文件；大数据量导出可使用 `streaming(...)` 创建 SXSSF 流式生成器。
+
+```java
+import com.chenbitao.word.excel.ExcelGenerator;
+import com.chenbitao.word.excel.XlsxWorkbookGenerator;
+import com.chenbitao.word.factory.SpreadsheetGeneratorFactory;
+import java.util.Arrays;
+
+ExcelGenerator generator = SpreadsheetGeneratorFactory.get("xlsx");
+generator.createWorkbook();
+generator.addHeaderRow("销售数据", Arrays.asList("产品", "数量", "单价", "小计"));
+generator.addRows("销售数据", Arrays.asList(
+    Arrays.asList("A", 2, 5.5),
+    Arrays.asList("B", 3, 4.0)
+));
+generator.setFormula("销售数据", 1, 3, "B2*C2");
+generator.autoSizeColumns("销售数据");
+generator.save("sales.xlsx");
+
+ExcelGenerator streamingGenerator = XlsxWorkbookGenerator.streaming(100);
+```
+
+playground 中也提供了可运行的 XLSX 流式导出演示：
+
+```shell
+mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.excel.XlsxLargeSalesReportDemo" "-Dexec.args=1000"
+```
+
+输出文件：
+
+```text
+playground/target/excel-large-sales-demo.xlsx
 ```
 
 ---
@@ -489,10 +599,10 @@ public class TableExample {
 
 ### 示例 4：生成与模板同数据的编程式文档
 
-`playground` 中的 `DemoMain` 使用 `TemplateDemoData.create()` 准备和模板演示相同的数据，再由 `ProgrammaticCadreDocumentWriter` 直接编程式生成 Word。业务字段组织、干部表版式仍留在 playground demo 中，页面、固定表格、图片来源等通用能力由 `word-generator` 的 `docx.util` 提供。
+`playground` 中的 `ProgrammaticCadreDocumentDemo` 使用 `CadreTemplateDemoData.create()` 准备和模板演示相同的数据，再由 `ProgrammaticCadreDocumentWriter` 直接编程式生成 Word。业务字段组织、干部表版式仍留在 playground demo 中，页面、固定表格、图片来源等通用能力由 `word-generator` 的 `docx.util` 提供。
 
 ```shell
-mvn -pl playground exec:java -Dexec.mainClass=com.chenbitao.word.playground.demo.DemoMain
+mvn -pl playground exec:java -Dexec.mainClass=com.chenbitao.word.playground.demo.programmatic.ProgrammaticCadreDocumentDemo
 ```
 
 输出文件：
@@ -581,16 +691,16 @@ poi-action 在性能方面表现出色，采用了多项优化策略：
 ```shell
 # 生成 1000 个文档，8 线程写入
 mvn -pl playground exec:java \
-  -Dexec.mainClass=com.chenbitao.word.playground.demo.TemplateBatchDemo \
+  -Dexec.mainClass=com.chenbitao.word.playground.demo.batch.TemplateBatchDocumentDemo \
   -Dexec.args="1000 8"
 
 # 通过参数指定数量和线程数，例如生成 320000 个，8 线程写入
 mvn -pl playground exec:java \
-  -Dexec.mainClass=com.chenbitao.word.playground.demo.TemplateBatchDemo \
+  -Dexec.mainClass=com.chenbitao.word.playground.demo.batch.TemplateBatchDocumentDemo \
   -Dexec.args="320000 8"
 ```
 
-`TemplateBatchDemo` 的优化点：
+`TemplateBatchDocumentDemo` 的优化点：
 
 - 模板文件只读取一次，后续渲染复用模板字节。
 - 示例数据只创建一次，避免批量任务把时间消耗在无关对象构造上。
@@ -613,6 +723,8 @@ mvn -pl playground test -Dtest=WordBuilderTest
 mvn -pl playground test -Dtest=TemplateWordGeneratorTest
 mvn -pl playground test -Dtest=WordGeneratorFactoryTest
 mvn -pl playground test -Dtest=ProgrammaticCadreDocumentWriterTest
+mvn -pl playground -am test -Dtest=XlsSalesReportDemoTest
+mvn -pl playground -am test -Dtest=XlsxLargeSalesReportDemoTest
 
 # 运行 word-generator 的 DOCX 公共工具测试
 mvn -pl word-generator test -Dtest=DocxPageUtilsTest,DocxFixedTableTest,ImageSourceUtilsTest

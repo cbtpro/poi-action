@@ -1,4 +1,4 @@
-package com.chenbitao.word.playground.demo;
+package com.chenbitao.word.playground.demo.template;
 
 import com.chenbitao.word.constant.BlankConstants;
 import com.chenbitao.word.docx.TemplateWordGenerator;
@@ -14,11 +14,22 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public final class TemplateDemoData {
+/**
+ * 干部任免审批表模板演示数据。
+ *
+ * <p>字段名需要与 {@code template.docx} 中的占位符保持一致，编程式演示也复用这份数据，
+ * 以便两种生成方式输出同一业务内容。</p>
+ */
+public final class CadreTemplateDemoData {
 
-    private TemplateDemoData() {
+    private CadreTemplateDemoData() {
     }
 
+    /**
+     * 创建一份完整的演示数据。
+     *
+     * @return 可直接传给 {@code TemplateWordGenerator.render(...)} 的数据映射
+     */
     public static Map<String, Object> create() throws IOException {
         Map<String, Object> data = new HashMap<>();
 
@@ -86,6 +97,7 @@ public final class TemplateDemoData {
 
     private static void addFamilyAndSocialRelations(Map<String, Object> data) {
         List<Map<String, String>> relationList = new ArrayList<>();
+        // 模板表格预留 7 行关系信息，空数据用于验证空白占位符的渲染效果。
         for (int i = 0; i < 7; i++) {
             relationList.add(buildRelation("", "", "", "", BlankConstants.EMPTY));
         }
@@ -101,6 +113,7 @@ public final class TemplateDemoData {
 
     private static byte[] demoPhoto() throws IOException {
         BufferedImage image = new BufferedImage(600, 800, BufferedImage.TYPE_INT_RGB);
+        // 使用纯色图片替代真实证件照，避免演示代码携带个人图片资产。
         for (int x = 0; x < image.getWidth(); x++) {
             for (int y = 0; y < image.getHeight(); y++) {
                 image.setRGB(x, y, 0x4F7DD1);

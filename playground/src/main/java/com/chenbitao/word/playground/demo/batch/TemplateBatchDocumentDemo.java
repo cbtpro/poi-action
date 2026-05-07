@@ -1,6 +1,8 @@
-package com.chenbitao.word.playground.demo;
+package com.chenbitao.word.playground.demo.batch;
 
 import com.chenbitao.word.docx.TemplateWordGenerator;
+import com.chenbitao.word.playground.demo.template.CadreTemplateDemoData;
+import com.chenbitao.word.playground.demo.template.TemplateDocumentDemo;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.ByteArrayInputStream;
@@ -19,7 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 @Slf4j
-public class TemplateBatchDemo {
+public class TemplateBatchDocumentDemo {
 
     private static final int DEFAULT_COUNT = 320000;
     private static final int DEFAULT_THREADS = calculateDefaultThreads();
@@ -83,7 +85,7 @@ public class TemplateBatchDemo {
         byte[] templateBytes = readTemplateBytes();
         log.info("模板读取完成：{} bytes", templateBytes.length);
 
-        byte[] documentBytes = renderDocumentBytes(templateBytes, TemplateDemoData.create());
+        byte[] documentBytes = renderDocumentBytes(templateBytes, CadreTemplateDemoData.create());
         log.info("模板渲染完成：{} bytes，开始多线程写入文件", documentBytes.length);
 
         BatchProgress progress = new BatchProgress(count);
@@ -192,7 +194,7 @@ public class TemplateBatchDemo {
      * <p>模板只读取一次，后续生成过程都复用这份字节，避免重复读取 classpath 资源。</p>
      */
     private static byte[] readTemplateBytes() throws IOException {
-        try (InputStream template = TemplateDemo.loadTemplate();
+        try (InputStream template = TemplateDocumentDemo.loadTemplate();
              ByteArrayOutputStream output = new ByteArrayOutputStream()) {
             byte[] buffer = new byte[8192];
             int length;

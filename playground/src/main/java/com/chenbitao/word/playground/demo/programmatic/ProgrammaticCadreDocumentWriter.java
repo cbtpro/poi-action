@@ -1,4 +1,4 @@
-package com.chenbitao.word.playground.demo;
+package com.chenbitao.word.playground.demo.programmatic;
 
 import com.chenbitao.word.docx.TemplateWordGenerator;
 import com.chenbitao.word.docx.util.DocxFixedTable;
@@ -24,7 +24,9 @@ import static com.chenbitao.word.docx.util.DocxFixedTable.text;
 
 /**
  * 干部任免审批表的编程式写入器。
- * 这里承载的是demo业务版式，公共Word生成器只保留通用能力。
+ *
+ * <p>这里承载 playground 的业务版式，公共 Word 生成器只保留通用能力，避免核心库反向依赖
+ * 具体业务字段和表格布局。</p>
  */
 final class ProgrammaticCadreDocumentWriter {
 
@@ -107,6 +109,7 @@ final class ProgrammaticCadreDocumentWriter {
     private List<DocxFixedTable.Row> rows(Map<String, Object> data) throws IOException {
         List<DocxFixedTable.Row> rows = new ArrayList<>();
 
+        // 前四行包含照片纵向合并，后续行通过 empty().vContinue() 延续照片单元格。
         rows.add(row(981,
                 text("姓名"), text(dataText(data, "nameSc")),
                 text("性别"), text(dataText(data, "sex")),
@@ -156,6 +159,7 @@ final class ProgrammaticCadreDocumentWriter {
         List<Map<?, ?>> educationList = toMapList(data.get("education"));
         int count = Math.max(1, educationList.size());
 
+        // 学历学位标题列和毕业院校标题列需要随教育记录数量纵向合并。
         for (int i = 0; i < count; i++) {
             Map<?, ?> education = mapAt(educationList, i);
             rows.add(row(
@@ -177,6 +181,7 @@ final class ProgrammaticCadreDocumentWriter {
     private void addFamilyRows(List<DocxFixedTable.Row> rows, Map<String, Object> data) {
         List<Map<?, ?>> relations = toMapList(data.get("familyAndSocialRelations"));
         int relationRows = Math.max(1, relations.size());
+        // 第一列为家庭关系区域标题，后续关系明细行继续该纵向合并。
         rows.add(row(
                 text("家庭主要成员及重要社会关系").vRestart(),
                 text("称谓"), text("姓名"), text("年龄"), text("政治面貌"), text("工作单位及职务").span(2)

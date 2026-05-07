@@ -1,5 +1,6 @@
-package com.chenbitao.word.playground.demo;
+package com.chenbitao.word.playground.demo.programmatic;
 
+import com.chenbitao.word.playground.demo.template.CadreTemplateDemoData;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFTable;
 import org.junit.Rule;
@@ -22,7 +23,7 @@ public class ProgrammaticCadreDocumentWriterTest {
     public void writeCreatesProgrammaticCadreDocument() throws Exception {
         File output = temporaryFolder.newFile("programmatic-demo.docx");
 
-        new ProgrammaticCadreDocumentWriter().write(TemplateDemoData.create(), output.toPath());
+        new ProgrammaticCadreDocumentWriter().write(CadreTemplateDemoData.create(), output.toPath());
 
         try (XWPFDocument document = new XWPFDocument(Files.newInputStream(output.toPath()))) {
             assertEquals("干部任免审批表", document.getParagraphArray(0).getText());
@@ -46,7 +47,7 @@ public class ProgrammaticCadreDocumentWriterTest {
         for (int i = 0; i < 3; i++) {
             File output = temporaryFolder.newFile("programmatic-demo-" + i + ".docx");
 
-            writer.write(TemplateDemoData.create(), output.toPath());
+            writer.write(CadreTemplateDemoData.create(), output.toPath());
 
             assertTrue(output.length() > 0);
             try (XWPFDocument document = new XWPFDocument(Files.newInputStream(output.toPath()))) {
