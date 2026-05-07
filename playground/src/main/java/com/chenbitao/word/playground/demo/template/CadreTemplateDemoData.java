@@ -2,11 +2,9 @@ package com.chenbitao.word.playground.demo.template;
 
 import com.chenbitao.word.constant.BlankConstants;
 import com.chenbitao.word.docx.TemplateWordGenerator;
+import com.chenbitao.word.util.ImageBytesUtils;
 import org.apache.poi.util.Units;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -112,16 +110,8 @@ public final class CadreTemplateDemoData {
     }
 
     private static byte[] demoPhoto() throws IOException {
-        BufferedImage image = new BufferedImage(600, 800, BufferedImage.TYPE_INT_RGB);
         // 使用纯色图片替代真实证件照，避免演示代码携带个人图片资产。
-        for (int x = 0; x < image.getWidth(); x++) {
-            for (int y = 0; y < image.getHeight(); y++) {
-                image.setRGB(x, y, 0x4F7DD1);
-            }
-        }
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        ImageIO.write(image, "png", output);
-        return output.toByteArray();
+        return ImageBytesUtils.solidPng(600, 800, 0x4F7DD1);
     }
 
     private static Map<String, String> buildEducation(String type, String degree,

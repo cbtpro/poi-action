@@ -1,13 +1,11 @@
 package com.chenbitao.word.docx.util;
 
+import com.chenbitao.word.util.ImageBytesUtils;
 import org.apache.poi.util.Units;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFTable;
 import org.junit.Test;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
 import java.util.Arrays;
 
@@ -52,9 +50,6 @@ public class DocxFixedTableTest {
     }
 
     private byte[] pngBytes() throws Exception {
-        BufferedImage image = new BufferedImage(10, 10, BufferedImage.TYPE_INT_RGB);
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        ImageIO.write(image, "png", output);
-        return output.toByteArray();
+        return ImageBytesUtils.solidPng(10, 10, 0);
     }
 }

@@ -1,13 +1,12 @@
 package com.chenbitao.word.pdf;
 
+import com.chenbitao.word.util.ImageBytesUtils;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import javax.imageio.ImageIO;
 import java.awt.Color;
-import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
@@ -47,14 +46,6 @@ public class PdfBoxDocumentGeneratorTest {
     }
 
     private byte[] demoImage() throws Exception {
-        BufferedImage image = new BufferedImage(120, 60, BufferedImage.TYPE_INT_RGB);
-        for (int x = 0; x < image.getWidth(); x++) {
-            for (int y = 0; y < image.getHeight(); y++) {
-                image.setRGB(x, y, Color.BLUE.getRGB());
-            }
-        }
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        ImageIO.write(image, "png", output);
-        return output.toByteArray();
+        return ImageBytesUtils.solidPng(120, 60, Color.BLUE.getRGB());
     }
 }

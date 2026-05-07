@@ -2,12 +2,10 @@ package com.chenbitao.word.playground.demo.presentation;
 
 import com.chenbitao.word.factory.PresentationGeneratorFactory;
 import com.chenbitao.word.presentation.PresentationGenerator;
+import com.chenbitao.word.util.ImageBytesUtils;
 import lombok.extern.slf4j.Slf4j;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -65,18 +63,12 @@ public class PptxProjectReportDemo {
     }
 
     private static byte[] demoImage() throws Exception {
-        BufferedImage image = new BufferedImage(640, 360, BufferedImage.TYPE_INT_RGB);
-        for (int x = 0; x < image.getWidth(); x++) {
-            for (int y = 0; y < image.getHeight(); y++) {
-                int red = 70 + (x * 80 / image.getWidth());
-                int green = 120 + (y * 80 / image.getHeight());
-                int blue = 90 + ((x + y) * 50 / (image.getWidth() + image.getHeight()));
-                image.setRGB(x, y, (red << 16) | (green << 8) | blue);
-            }
-        }
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        ImageIO.write(image, "png", output);
-        return output.toByteArray();
+        return ImageBytesUtils.png(640, 360, (x, y, width, height) -> {
+            int red = 70 + (x * 80 / width);
+            int green = 120 + (y * 80 / height);
+            int blue = 90 + ((x + y) * 50 / (width + height));
+            return (red << 16) | (green << 8) | blue;
+        });
     }
 
     private static Path defaultOutputPath() {

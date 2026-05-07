@@ -1,5 +1,6 @@
 package com.chenbitao.word.presentation;
 
+import com.chenbitao.word.util.ImageBytesUtils;
 import org.apache.poi.hslf.usermodel.HSLFPictureShape;
 import org.apache.poi.hslf.usermodel.HSLFShape;
 import org.apache.poi.hslf.usermodel.HSLFSlide;
@@ -8,8 +9,6 @@ import org.apache.poi.hslf.usermodel.HSLFTable;
 import org.apache.poi.hslf.usermodel.HSLFTextShape;
 import org.junit.Test;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
@@ -94,14 +93,6 @@ public class HslfPresentationGeneratorTest {
     }
 
     private byte[] demoImage() throws Exception {
-        BufferedImage image = new BufferedImage(160, 100, BufferedImage.TYPE_INT_RGB);
-        for (int x = 0; x < image.getWidth(); x++) {
-            for (int y = 0; y < image.getHeight(); y++) {
-                image.setRGB(x, y, 0x5B9BD5);
-            }
-        }
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        ImageIO.write(image, "png", output);
-        return output.toByteArray();
+        return ImageBytesUtils.solidPng(160, 100, 0x5B9BD5);
     }
 }

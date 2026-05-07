@@ -1,13 +1,12 @@
 package com.chenbitao.word.docx.util;
 
+import com.chenbitao.word.util.ImageBytesUtils;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -162,12 +161,10 @@ public class ImageSourceUtilsTest {
     @Test
     public void toPngBytes_ConvertJpegToPng_ReturnsPngBytes() throws Exception {
         // 构造测试图片
-        BufferedImage image = new BufferedImage(10, 10, BufferedImage.TYPE_INT_RGB);
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ImageIO.write(image, "jpg", baos);
+        byte[] jpgBytes = ImageBytesUtils.solidImage("jpg", 10, 10, 0x3366CC);
 
         // 转换为 PNG
-        byte[] pngBytes = ImageSourceUtils.toPngBytes(baos.toByteArray());
+        byte[] pngBytes = ImageSourceUtils.toPngBytes(jpgBytes);
 
         // 验证 PNG 文件头
         assertNotNull(pngBytes);

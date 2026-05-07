@@ -2,13 +2,10 @@ package com.chenbitao.word.playground.demo.pdf;
 
 import com.chenbitao.word.factory.PdfDocumentGeneratorFactory;
 import com.chenbitao.word.pdf.PdfDocumentGenerator;
+import com.chenbitao.word.util.ImageBytesUtils;
 import lombok.extern.slf4j.Slf4j;
 
-import javax.imageio.ImageIO;
-import java.awt.Color;
-import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -63,18 +60,12 @@ public class PdfProjectReportDemo {
     }
 
     private static byte[] demoImage() throws Exception {
-        BufferedImage image = new BufferedImage(480, 240, BufferedImage.TYPE_INT_RGB);
-        for (int x = 0; x < image.getWidth(); x++) {
-            for (int y = 0; y < image.getHeight(); y++) {
-                int red = 60 + (x * 80 / image.getWidth());
-                int green = 120 + (y * 70 / image.getHeight());
-                int blue = 150 + ((x + y) * 40 / (image.getWidth() + image.getHeight()));
-                image.setRGB(x, y, new Color(red, green, blue).getRGB());
-            }
-        }
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        ImageIO.write(image, "png", output);
-        return output.toByteArray();
+        return ImageBytesUtils.png(480, 240, (x, y, width, height) -> {
+            int red = 60 + (x * 80 / width);
+            int green = 120 + (y * 70 / height);
+            int blue = 150 + ((x + y) * 40 / (width + height));
+            return (red << 16) | (green << 8) | blue;
+        });
     }
 
     private static Path defaultOutputPath() {
