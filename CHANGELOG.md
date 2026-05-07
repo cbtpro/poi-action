@@ -4,6 +4,33 @@
 
 ### Added
 
+- 新增 PDF 文档生成能力：
+  - 引入 Apache PDFBox 作为 PDF 生成依赖。
+  - `PdfDocumentGenerator` 作为 PDF 文档生成统一接口。
+  - `PdfBoxDocumentGenerator` 支持 `.pdf` 文件生成，覆盖标题、段落、表格和图片。
+  - `PdfDocumentGeneratorFactory` 支持按 `pdf` 类型创建 PDF 生成器。
+  - `PdfDocumentException` 用于封装 PDF 创建、绘制和写出异常。
+- 新增 playground PDF 演示：
+  - `PdfProjectReportDemo` 生成包含标题、段落、表格和图片的 `.pdf` 项目汇报。
+- 新增 PDF 相关测试：
+  - 覆盖 PDF 页数、文本内容、表格文本和图片生成结果。
+  - 覆盖 playground 中 PDF demo 生成结果。
+
+### Changed
+
+- 更新 README：
+  - 将 PDF `.pdf` 从待办文档类型移入已支持文档类型。
+  - 增加 `PdfBoxDocumentGenerator` API 示例。
+  - 增加 playground PDF demo 运行命令和测试命令。
+
+### Verified
+
+- `mvn -pl word-generator test`
+- `mvn -pl playground -am test`
+- `mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.pdf.PdfProjectReportDemo"`
+
+### Added
+
 - 新增 Outlook MSG 邮件读取能力：
   - `OutlookMessageReader` 支持读取 `.msg` 文件并提取主题、发件人、收件人、正文和附件摘要。
   - `OutlookMessageInfo` 和 `OutlookAttachmentInfo` 用于承载邮件解析结果。
