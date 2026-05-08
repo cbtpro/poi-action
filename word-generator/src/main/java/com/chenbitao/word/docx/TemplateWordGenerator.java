@@ -15,6 +15,7 @@ import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -729,11 +730,32 @@ public class TemplateWordGenerator {
         if (text.isEmpty()) {
             return false;
         }
-        return text.startsWith("data:image/")
+        if (text.startsWith("data:image/")
                 || text.startsWith("http://")
                 || text.startsWith("https://")
-                || isBase64Image(text)
-                || Files.isRegularFile(new File(text).toPath());
+                || isBase64Image(text)) {
+            return true;
+        }
+
+        if (containsInvalidPathChars(text)) {
+            return false;
+        }
+
+        return Files.isRegularFile(new File(text).toPath());
+    }
+    /**
+     * 检查字符串是否包含非法的文件路径字符
+     *
+     * @param path 要检查的路径字符串
+     * @return 如果包含非法字符则返回true
+     */
+    private boolean containsInvalidPathChars(String path) {
+        String osName = System.getProperty("os.name").toLowerCase();
+        if (osName.contains("win")) {
+            return path.matches(".*[<>:\"/\\\\|?*].*");
+        } else {
+            return path.contains("\0");
+        }
     }
 
     /**

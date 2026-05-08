@@ -2,6 +2,7 @@ package com.chenbitao.word.playground.demo.template;
 
 import com.chenbitao.word.constant.BlankConstants;
 import com.chenbitao.word.docx.TemplateWordGenerator;
+import com.chenbitao.word.playground.demo.commons.TestConstants;
 import com.chenbitao.word.util.ImageBytesUtils;
 import org.apache.poi.util.Units;
 
@@ -44,7 +45,7 @@ public final class CadreTemplateDemoData {
     }
 
     private static void addBasicInfo(Map<String, Object> data) {
-        data.put("nameSc", "张三");
+        data.put("nameSc", TestConstants.MOCK_NAME);
         data.put("sex", "男");
         data.put("birthday", "2008-01");
         data.put("age", "18");

@@ -1,5 +1,6 @@
 package com.chenbitao.word.playground.demo.programmatic;
 
+import com.chenbitao.word.playground.demo.commons.TestConstants;
 import com.chenbitao.word.playground.demo.template.CadreTemplateDemoData;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFTable;
@@ -34,7 +35,7 @@ public class ProgrammaticCadreDocumentWriterTest {
             assertEquals(BigInteger.valueOf(9752), table.getCTTbl().getTblPr().getTblW().getW());
             assertEquals(7, table.getCTTbl().getTblGrid().sizeOfGridColArray());
             assertEquals("姓名", table.getRow(0).getCell(0).getText());
-            assertEquals("张三", table.getRow(0).getCell(1).getText());
+            assertEquals(TestConstants.MOCK_NAME, table.getRow(0).getCell(1).getText());
             assertTrue(table.getRow(0).getCell(6).getCTTc().getTcPr().isSetVMerge());
             assertTrue(table.getRow(4).getCell(0).getCTTc().getTcPr().isSetVMerge());
         }
