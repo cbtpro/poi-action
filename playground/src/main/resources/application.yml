@@ -2,7 +2,8 @@ spring:
   application:
     name: playground
   config:
-    import: optional:classpath:application-logging.yml
+    import:
+      - optional:classpath:application-logging.yml
   profiles:
     include: local
 
