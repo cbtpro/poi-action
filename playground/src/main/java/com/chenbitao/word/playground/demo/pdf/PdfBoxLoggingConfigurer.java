@@ -16,7 +16,7 @@ import java.util.Properties;
  * <p>playground demo 是普通 main 方法，不会自动启动 Spring 环境，
  * 因此这里主动读取 application YAML 中的 PDFBox 相关日志级别配置。</p>
  */
-final class PdfBoxLoggingConfigurer {
+public final class PdfBoxLoggingConfigurer {
 
     private static final String LOG_LEVEL_OVERRIDE = "pdfbox.log.level";
     private static final String ACTIVE_PROFILE = "spring.profiles.active";
@@ -25,7 +25,7 @@ final class PdfBoxLoggingConfigurer {
     private PdfBoxLoggingConfigurer() {
     }
 
-    static void configure() {
+    public static void configure() {
         Properties properties = load("application-logging.yml");
         String profile = activeProfile();
         if (!profile.isEmpty()) {

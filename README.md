@@ -96,6 +96,15 @@ mvn -pl playground exec:java \
   -Dexec.mainClass=com.chenbitao.word.playground.demo.batch.TemplateBatchDocumentDemo \
   -Dexec.args="1000 8"
 
+# 运行批量 PDF 生成演示，默认生成 32000 个 100 页 PDF 到 playground/target/pdf-batch-out
+mvn -pl playground exec:java \
+  -Dexec.mainClass=com.chenbitao.word.playground.demo.batch.BatchPdfDocumentDemo
+
+# 也可以指定生成数量和线程数，例如生成 1000 个 100 页 PDF，8 线程写入
+mvn -pl playground exec:java \
+  -Dexec.mainClass=com.chenbitao.word.playground.demo.batch.BatchPdfDocumentDemo \
+  -Dexec.args="1000 8"
+
 # 运行 Excel 97-2003 生成演示，输出到 playground/target/excel-sales-demo.xls
 mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.excel.XlsSalesReportDemo"
 
@@ -956,6 +965,11 @@ mvn -pl playground exec:java \
 mvn -pl playground exec:java \
   -Dexec.mainClass=com.chenbitao.word.playground.demo.batch.TemplateBatchDocumentDemo \
   -Dexec.args="320000 8"
+
+# 生成 32000 个 100 页 PDF，默认输出到 playground/target/pdf-batch-out
+mvn -pl playground exec:java \
+  -Dexec.mainClass=com.chenbitao.word.playground.demo.batch.BatchPdfDocumentDemo \
+  -Dexec.args="32000 8"
 ```
 
 `TemplateBatchDocumentDemo` 的优化点：
@@ -965,6 +979,13 @@ mvn -pl playground exec:java \
 - 渲染后的文档字节一次生成，多线程负责写出不同文件。
 - 进度日志包含完成数、失败数、百分比、速度和预计剩余时间。
 - 输出目录固定为 `playground/target/out`。
+
+`BatchPdfDocumentDemo` 的优化点：
+
+- 默认生成 32000 个 100 页 PDF，输出目录固定为 `playground/target/pdf-batch-out`。
+- 每个 PDF 都复用 `PdfProjectReportDemo` 的 100 页项目组合报告数据和排版，包含图片、彩色文字、指标卡、时间线、风险面板和文字环绕。
+- 使用线程池并发写入，支持通过命令行参数覆盖生成数量和线程数。
+- 进度日志包含完成数、失败数、速度和预计剩余时间。
 
 ---
 
