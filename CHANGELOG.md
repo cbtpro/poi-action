@@ -1,5 +1,33 @@
 # Changelog
 
+## 2026-05-09
+
+### Added
+
+- 新增 Visio 绘图读取能力：
+  - `VisioDrawingReader` 支持 `.vsdx` 页面、形状、连接数和文本摘要信息提取。
+  - `VisioDrawingReader` 支持 `.vsd` 文本信息提取入口。
+  - `VisioDrawingInfo`、`VisioPageInfo` 和 `VisioShapeInfo` 用于承载 Visio 解析结果。
+  - `VisioDrawingReaderFactory` 支持按 `vsd` / `vsdx` 类型创建 Visio 读取器。
+  - `VisioDrawingException` 用于封装 Visio 读取异常。
+- 新增 playground Visio 演示：
+  - `VisioWorkflowExtractDemo` 生成最小 `.vsdx` 工作流示例并输出读取摘要。
+- 新增 Visio 相关测试：
+  - 覆盖 VSDX 页面、图形、文本、连接数和尺寸提取。
+  - 覆盖 Visio reader factory 和 playground demo 生成结果。
+
+### Changed
+
+- 更新 README：
+  - 将 Visio `.vsd` / `.vsdx` 从待办文档类型移入已支持文档类型。
+  - 增加 `VisioDrawingReader` API 示例。
+  - 增加 playground Visio demo 运行命令和测试命令。
+
+### Verified
+
+- `mvn -pl word-generator test`
+- `mvn -pl playground -am test`
+
 ## 2026-05-07
 
 ### Added
