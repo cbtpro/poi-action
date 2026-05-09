@@ -1,12 +1,12 @@
 # poi-action
 
-基于 Apache POI 和 PDFBox 的文档处理库，支持 Word、Excel、PowerPoint、PDF 的编程式生成，以及 Outlook 邮件和 Visio 绘图信息提取。提供流式 API、模板引擎、工厂模式等设计模式，让 Office 文档处理变得简单高效。
+基于 Apache POI 和 PDFBox 的文档处理库，支持 Word、Excel、PowerPoint、PDF 的编程式生成，以及 Outlook 邮件、Visio 绘图和 Publisher 文档信息提取。提供流式 API、模板引擎、工厂模式等设计模式，让 Office 文档处理变得简单高效。
 
 ## 功能特性
 
 - **编程式生成**：使用流式 API（Builder 模式）直接构建 Word 文档
 - **模板式生成**：基于 Word 模板进行数据填充和循环渲染
-- **多格式支持**：支持 Word、Excel、PowerPoint、PDF、Outlook 和 Visio 常见格式
+- **多格式支持**：支持 Word、Excel、PowerPoint、PDF、Outlook、Visio 和 Publisher 常见格式
 - **丰富的元素支持**：段落、标题、表格、图片等
 - **表格高级功能**：单元格合并、循环填充等
 - **图片灵活处理**：支持本地文件、URL、Base64 等多种图片源
@@ -29,14 +29,11 @@
 | PDF 文档 | `.pdf` | PDFBox | 标题、段落、表格、图片生成 |
 | Outlook 邮件 | `.msg` | HSMF | 邮件主题、发件人、收件人、正文、附件摘要信息提取 |
 | Visio 绘图 | `.vsd` / `.vsdx` | HDGF / XDGF | 文本、页面、图形结构和基础信息提取 |
+| Publisher 文档 | `.pub` | HPBF | 元数据和文本内容提取 |
 
 ## 待办文档类型
 
-Apache POI 还覆盖多种 Office/OLE2/OOXML 文档格式，当前项目尚未封装这些能力，后续可按优先级扩展：
-
-| 类型 | 文件扩展名 | POI 组件 | 计划能力 |
-|------|------------|----------|----------|
-| Publisher 文档 | `.pub` | HPBF | 元数据和文本内容提取 |
+Apache POI 还覆盖多种 Office/OLE2/OOXML 文档格式，后续可继续按使用场景扩展更多读取或生成能力。
 
 ## 项目结构
 
@@ -54,6 +51,7 @@ poi-action/
 │       ├── outlook/         # Outlook MSG 邮件读取器
 │       ├── pdf/             # PDF 文档生成器
 │       ├── presentation/    # PPT 演示文稿生成器
+│       ├── publisher/       # Publisher 文档读取器
 │       ├── visio/           # Visio 绘图读取器
 │       ├── constant/        # 常量定义
 │       └── exception/       # 异常类
@@ -66,6 +64,7 @@ poi-action/
 │           ├── outlook/     # Outlook 邮件读取演示
 │           ├── pdf/         # PDF 生成演示
 │           ├── presentation/# PowerPoint 生成演示
+│           ├── publisher/   # Publisher 文档读取演示
 │           ├── programmatic/# 编程式固定版式生成演示
 │           ├── template/    # 模板渲染演示和演示数据
 │           ├── visio/       # Visio 绘图读取演示
@@ -117,6 +116,9 @@ mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.dem
 
 # 运行 Visio VSDX 绘图读取演示，输出到 playground/target/visio
 mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.visio.VisioWorkflowExtractDemo"
+
+# 运行 Publisher PUB 文档读取演示，输出到 playground/target/publisher
+mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.publisher.PublisherBrochureExtractDemo"
 
 # 启动 Spring Boot 演示服务，actuator 仅在 dev/test 生效
 mvn -pl playground spring-boot:run -Dspring-boot.run.profiles=dev
@@ -600,6 +602,38 @@ playground/target/visio/workflow-summary.txt
 
 ---
 
+### Publisher 文档读取器 - PublisherDocumentReader
+
+`PublisherDocumentReader` 基于 POI HPBF 读取 `.pub` 文件，支持提取 Publisher 文档的标题、主题、作者、关键词、备注和正文文本。
+
+```java
+import com.chenbitao.word.factory.PublisherDocumentReaderFactory;
+import com.chenbitao.word.publisher.PublisherDocumentInfo;
+import com.chenbitao.word.publisher.PublisherDocumentReader;
+
+PublisherDocumentReader reader = PublisherDocumentReaderFactory.get("pub");
+PublisherDocumentInfo document = reader.read("brochure.pub");
+
+String title = document.getTitle();
+String author = document.getAuthor();
+String text = document.getText();
+```
+
+playground 中也提供了可运行的 Publisher PUB 读取演示：
+
+```shell
+mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.publisher.PublisherBrochureExtractDemo"
+```
+
+输出文件：
+
+```text
+playground/target/publisher/brochure-demo.pub
+playground/target/publisher/brochure-summary.txt
+```
+
+---
+
 ### PDF 文档生成器 - PdfBoxDocumentGenerator
 
 `PdfBoxDocumentGenerator` 基于 Apache PDFBox 生成 `.pdf` 文件，支持标题、段落、基础表格和图片。
@@ -858,6 +892,7 @@ playground/target/programmatic-demo.docx
 | `XslfPresentationGenerator` | PPTX 格式生成器 | 标题页、文本页、表格页、图片页 |
 | `OutlookMessageReader` | Outlook MSG 读取器 | 邮件主题、正文、附件摘要信息提取 |
 | `PdfBoxDocumentGenerator` | PDF 格式生成器 | 标题、段落、表格、图片生成 |
+| `PublisherDocumentReader` | Publisher PUB 读取器 | 标题、主题、作者、关键词、备注和正文文本提取 |
 | `VisioDrawingReader` | Visio 绘图读取器 | 页面、形状、连接数和文本摘要信息提取 |
 | `WordBuilder` | 建造者类 | 流式 API |
 | `WordGeneratorFactory` | 工厂类 | 获取生成器实例 |
@@ -865,6 +900,7 @@ playground/target/programmatic-demo.docx
 | `PresentationGeneratorFactory` | 演示文稿工厂类 | 获取 PPT / PPTX 生成器实例 |
 | `OutlookMessageReaderFactory` | Outlook 邮件读取器工厂类 | 获取 MSG 读取器实例 |
 | `PdfDocumentGeneratorFactory` | PDF 文档生成器工厂类 | 获取 PDF 生成器实例 |
+| `PublisherDocumentReaderFactory` | Publisher 文档读取器工厂类 | 获取 PUB 读取器实例 |
 | `VisioDrawingReaderFactory` | Visio 绘图读取器工厂类 | 获取 VSD / VSDX 读取器实例 |
 | `DocxPageUtils` | DOCX 页面工具 | 页面尺寸、边距、标题、字体 |
 | `DocxFixedTable` | DOCX 固定表格工具 | 固定列宽、跨列、纵向合并、表格图片 |
@@ -952,6 +988,7 @@ mvn -pl playground -am test -Dtest=PptxProjectReportDemoTest
 mvn -pl playground -am test -Dtest=OutlookMessageExtractDemoTest
 mvn -pl playground -am test -Dtest=PdfProjectReportDemoTest
 mvn -pl playground -am test -Dtest=VisioWorkflowExtractDemoTest
+mvn -pl playground -am test -Dtest=PublisherBrochureExtractDemoTest
 
 # 运行 word-generator 的 DOCX 公共工具测试
 mvn -pl word-generator test -Dtest=DocxPageUtilsTest,DocxFixedTableTest,ImageSourceUtilsTest
@@ -964,6 +1001,9 @@ mvn -pl word-generator test -Dtest=PdfBoxDocumentGeneratorTest,PdfDocumentGenera
 
 # 运行 word-generator 的 Visio 绘图读取测试
 mvn -pl word-generator test -Dtest=VisioDrawingReaderTest,VisioDrawingReaderFactoryTest
+
+# 运行 word-generator 的 Publisher 文档读取测试
+mvn -pl word-generator test -Dtest=PublisherDocumentReaderTest,PublisherDocumentReaderFactoryTest
 ```
 
 ### Actuator

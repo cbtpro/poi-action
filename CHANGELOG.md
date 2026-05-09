@@ -4,6 +4,16 @@
 
 ### Added
 
+- 新增 Publisher 文档读取能力：
+  - `PublisherDocumentReader` 支持 `.pub` 元数据和正文文本提取。
+  - `PublisherDocumentInfo` 用于承载 Publisher 标题、主题、作者、关键词、备注和文本结果。
+  - `PublisherDocumentReaderFactory` 支持按 `pub` 类型创建 Publisher 读取器。
+  - `PublisherDocumentException` 用于封装 Publisher 读取异常。
+- 新增 playground Publisher 演示：
+  - `PublisherBrochureExtractDemo` 生成最小 `.pub` 宣传册示例并输出读取摘要。
+- 新增 Publisher 相关测试：
+  - 覆盖 PUB 标题、主题、作者、关键词、备注和文本内容提取。
+  - 覆盖 Publisher reader factory 和 playground demo 生成结果。
 - 新增 Visio 绘图读取能力：
   - `VisioDrawingReader` 支持 `.vsdx` 页面、形状、连接数和文本摘要信息提取。
   - `VisioDrawingReader` 支持 `.vsd` 文本信息提取入口。
@@ -19,6 +29,9 @@
 ### Changed
 
 - 更新 README：
+  - 将 Publisher `.pub` 从待办文档类型移入已支持文档类型。
+  - 增加 `PublisherDocumentReader` API 示例。
+  - 增加 playground Publisher demo 运行命令和测试命令。
   - 将 Visio `.vsd` / `.vsdx` 从待办文档类型移入已支持文档类型。
   - 增加 `VisioDrawingReader` API 示例。
   - 增加 playground Visio demo 运行命令和测试命令。
@@ -27,6 +40,7 @@
 
 - `mvn -pl word-generator test`
 - `mvn -pl playground -am test`
+- `mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.publisher.PublisherBrochureExtractDemo"`
 
 ## 2026-05-07
 
