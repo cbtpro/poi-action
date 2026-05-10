@@ -4,6 +4,16 @@
 
 ### Added
 
+- 新增 Excel 模板生成能力：
+  - `TemplateXlsWorkbookGenerator` 支持 `.xls` 模板单元格占位符渲染。
+  - `TemplateXlsxWorkbookGenerator` 支持 `.xlsx` 模板单元格占位符渲染。
+  - 支持 `${key}` 文本占位符、`${object.field}` 嵌套字段、列表字段和数组多行输出。
+  - 当单元格只有一个占位符且数据值为数字、布尔值或日期时，会保留对应单元格类型。
+  - 渲染后保留模板样式和公式，并启用公式重算。
+- 新增 playground Excel 模板演示：
+  - `TemplateExcelDocumentDemo` 输出 `playground/target/template-sales-demo.xls` 和 `playground/target/template-sales-demo.xlsx`。
+- 新增 Excel 模板相关测试：
+  - 覆盖 XLS / XLSX 模板渲染、嵌套字段、列表字段、数字类型和公式保留。
 - 新增 Word 97-2003 `.doc` 模板生成能力：
   - `TemplateDocWordGenerator` 支持基于 HWPF 渲染 DOC 模板。
   - 支持 `${key}` 文本占位符、`${object.field}` 嵌套字段、列表字段和数组多行输出。
@@ -17,6 +27,8 @@
 ### Changed
 
 - 更新 README：
+  - 将 Excel `.xls` / `.xlsx` 模板生成状态改为已支持。
+  - 增加 Excel 模板生成器 API 示例、playground 运行命令和测试命令。
   - 将 Word 97-2003 `.doc` 模板生成状态改为已支持。
   - 增加 `TemplateDocWordGenerator` API 示例、playground 运行命令和测试命令。
 
@@ -24,6 +36,8 @@
 
 - `mvn -pl playground -am test "-Dtest=TemplateDocWordGeneratorTest" "-Dsurefire.failIfNoSpecifiedTests=false"`
 - `mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.template.TemplateDocDocumentDemo"`
+- `mvn -pl word-generator test "-Dtest=TemplateWorkbookGeneratorTest"`
+- `mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.excel.TemplateExcelDocumentDemo"`
 
 ## 2026-05-09
 

@@ -22,8 +22,8 @@
 |------|------------|----------|----------|
 | Word 97-2003 文档 | `.doc` | HWPF | 编程式生成和模板式生成，支持段落、标题、文本表格、占位符渲染、列表字段渲染等基础能力，表格和图片能力有限 |
 | Word Open XML 文档 | `.docx` | XWPF | 编程式生成和模板式生成，支持段落、标题、表格、图片、占位符渲染、列表循环、固定版式工具 |
-| Excel 97-2003 工作簿 | `.xls` | HSSF | 表格数据写入、表头样式、公式、自动列宽 |
-| Excel Open XML 工作簿 | `.xlsx` | XSSF / SXSSF | 表格数据写入、表头样式、公式、自动列宽、流式大数据量写出 |
+| Excel 97-2003 工作簿 | `.xls` | HSSF | 编程式生成和模板式生成，支持表格数据写入、表头样式、公式、自动列宽、单元格占位符渲染 |
+| Excel Open XML 工作簿 | `.xlsx` | XSSF / SXSSF | 编程式生成和模板式生成，支持表格数据写入、表头样式、公式、自动列宽、流式大数据量写出、单元格占位符渲染 |
 | PowerPoint 97-2003 演示文稿 | `.ppt` | HSLF | 标题页、文本页、表格页、图片页 |
 | PowerPoint Open XML 演示文稿 | `.pptx` | XSLF | 标题页、文本页、表格页、图片页 |
 | PDF 文档 | `.pdf` | PDFBox | 标题、段落、表格、图片生成 |
@@ -33,14 +33,14 @@
 
 ## 模板生成支持范围
 
-当前模板生成能力由 `TemplateDocWordGenerator` 和 `TemplateWordGenerator` 提供，覆盖 Word 97-2003 与 Word Open XML 两类模板。其它格式虽然可能已经支持编程式生成或信息提取，但尚未提供模板式生成器。
+当前模板生成能力由 `TemplateDocWordGenerator`、`TemplateWordGenerator`、`TemplateXlsWorkbookGenerator` 和 `TemplateXlsxWorkbookGenerator` 提供，覆盖 Word 与 Excel 模板。其它格式虽然可能已经支持编程式生成或信息提取，但尚未提供模板式生成器。
 
 | 文档类别 | 文件扩展名 | 模板生成状态 | 说明 |
 |----------|------------|--------------|------|
 | Word Open XML 文档 | `.docx` | 已支持 | 通过 `TemplateWordGenerator` 渲染，占位符格式为 `${key}`，支持表格列表循环 `${list.field}` 和图片占位符 |
 | Word 97-2003 文档 | `.doc` | 已支持 | 通过 `TemplateDocWordGenerator` 渲染，占位符格式为 `${key}`，支持嵌套字段、列表字段和数组多行输出；为保持旧版 DOC 二进制结构稳定，替换值长度不能超过占位符长度，图片占位符会渲染为 `[图片]` 文本标记 |
-| Excel 97-2003 工作簿 | `.xls` | 未支持 | 当前支持编程式写入表格、公式和样式，尚未提供模板填充能力 |
-| Excel Open XML 工作簿 | `.xlsx` | 未支持 | 当前支持编程式写入和 SXSSF 流式大数据量写出，尚未提供模板填充能力 |
+| Excel 97-2003 工作簿 | `.xls` | 已支持 | 通过 `TemplateXlsWorkbookGenerator` 渲染，支持单元格 `${key}` 占位符、嵌套字段、列表/数组多行输出，并保留模板样式和公式 |
+| Excel Open XML 工作簿 | `.xlsx` | 已支持 | 通过 `TemplateXlsxWorkbookGenerator` 渲染，支持单元格 `${key}` 占位符、嵌套字段、列表/数组多行输出，并保留模板样式和公式 |
 | PowerPoint 97-2003 演示文稿 | `.ppt` | 未支持 | 当前支持编程式生成标题页、文本页、表格页和图片页，尚未提供模板渲染能力 |
 | PowerPoint Open XML 演示文稿 | `.pptx` | 未支持 | 当前支持编程式生成标题页、文本页、表格页和图片页，尚未提供模板渲染能力 |
 | PDF 文档 | `.pdf` | 未支持 | 当前支持基于 PDFBox 的编程式生成，尚未提供 PDF 模板填充能力 |
@@ -130,6 +130,9 @@ mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.dem
 
 # 运行 Excel Open XML 流式生成演示，输出到 playground/target/excel-large-sales-demo.xlsx
 mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.excel.XlsxLargeSalesReportDemo" "-Dexec.args=1000"
+
+# 运行 Excel 模板式生成演示，输出 XLS 和 XLSX 到 playground/target
+mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.excel.TemplateExcelDocumentDemo"
 
 # 运行 PowerPoint 97-2003 生成演示，输出到 playground/target/project-report-demo.ppt
 mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.presentation.PptProjectReportDemo"
@@ -523,6 +526,44 @@ mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.dem
 
 ```text
 playground/target/excel-large-sales-demo.xlsx
+```
+
+---
+
+### Excel 模板生成器 - TemplateXlsWorkbookGenerator / TemplateXlsxWorkbookGenerator
+
+`TemplateXlsWorkbookGenerator` 和 `TemplateXlsxWorkbookGenerator` 分别支持 `.xls` 与 `.xlsx` 模板渲染。模板单元格使用 `${key}` 占位符，支持 `${object.field}` 嵌套字段；当单元格只有一个占位符且数据值为数字、布尔值或日期时，会保留对应单元格类型。列表和数组会按多行文本输出，模板中的样式和公式会保留。
+
+```java
+import com.chenbitao.word.excel.TemplateXlsxWorkbookGenerator;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
+
+InputStream template = TemplateXlsxWorkbookGenerator.class
+    .getResourceAsStream("/sales-template.xlsx");
+
+TemplateXlsxWorkbookGenerator generator = new TemplateXlsxWorkbookGenerator(template);
+Map<String, Object> data = new HashMap<>();
+data.put("product", "模板服务");
+data.put("quantity", 12);
+data.put("price", 199.5D);
+
+generator.render(data);
+generator.save("sales-report.xlsx");
+```
+
+playground 中也提供了可运行的 Excel 模板演示：
+
+```shell
+mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.excel.TemplateExcelDocumentDemo"
+```
+
+输出文件：
+
+```text
+playground/target/template-sales-demo.xls
+playground/target/template-sales-demo.xlsx
 ```
 
 ---
@@ -954,6 +995,8 @@ playground/target/programmatic-demo.docx
 | `DocWordGenerator` | DOC 格式生成器 | 兼容旧版本 Office |
 | `TemplateWordGenerator` | 模板渲染生成器 | 支持占位符和循环 |
 | `TemplateDocWordGenerator` | DOC 模板渲染生成器 | 支持文本占位符、嵌套字段和列表字段 |
+| `TemplateXlsWorkbookGenerator` | XLS 模板渲染生成器 | 支持单元格占位符和类型保留 |
+| `TemplateXlsxWorkbookGenerator` | XLSX 模板渲染生成器 | 支持单元格占位符和类型保留 |
 | `HslfPresentationGenerator` | PPT 格式生成器 | 标题页、文本页、表格页、图片页 |
 | `XslfPresentationGenerator` | PPTX 格式生成器 | 标题页、文本页、表格页、图片页 |
 | `OutlookMessageReader` | Outlook MSG 读取器 | 邮件主题、正文、附件摘要信息提取 |
@@ -1071,6 +1114,9 @@ mvn -pl playground -am test -Dtest=PublisherBrochureExtractDemoTest
 
 # 运行 word-generator 的 DOCX 公共工具测试
 mvn -pl word-generator test -Dtest=DocxPageUtilsTest,DocxFixedTableTest,ImageSourceUtilsTest
+
+# 运行 word-generator 的 Excel 模板生成测试
+mvn -pl word-generator test -Dtest=TemplateWorkbookGeneratorTest
 
 # 运行 word-generator 的 Outlook MSG 读取测试
 mvn -pl word-generator test -Dtest=OutlookMessageReaderTest,OutlookMessageReaderFactoryTest
