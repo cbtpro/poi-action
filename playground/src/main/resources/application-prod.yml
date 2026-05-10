@@ -1,5 +1,6 @@
 spring:
   config:
+    import: optional:classpath:application-logging-prod.yml
     activate:
       on-profile: prod
 

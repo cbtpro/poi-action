@@ -1,0 +1,4 @@
+logging:
+  level:
+    org.apache.pdfbox: WARN
+    org.apache.fontbox: WARN

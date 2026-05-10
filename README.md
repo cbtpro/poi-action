@@ -1,18 +1,79 @@
 # poi-action
 
-基于 Apache POI 的 Word 文档生成库，支持编程式生成和模板式生成两种方式。提供流式 API、模板引擎、工厂模式等设计模式，让 Word 文档生成变得简单高效。
+基于 Apache POI 和 PDFBox 的文档处理库，支持 Word、Excel、PowerPoint、PDF 的编程式生成，以及 Outlook 邮件、Visio 绘图和 Publisher 文档信息提取。提供流式 API、模板引擎、工厂模式等设计模式，让 Office 文档处理变得简单高效。
+
+## 🤖 AI 辅助开发
+
+本项目由作者独立设计与搭建，在开发过程中获得了以下 AI 编程助手的建议与支持：
+
+<p align="center">
+  <a href="https://github.com/features/copilot" title="GitHub Copilot">
+    <img src="https://img.shields.io/badge/GitHub%20Copilot-Enabled-blue?logo=github&style=for-the-badge" alt="GitHub Copilot" />
+  </a>
+  <a href="https://openai.com/index/hello-gpt-4o/" title="OpenAI Codex">
+    <img src="https://img.shields.io/badge/OpenAI%20Codex-Powered-green?logo=openai&style=for-the-badge" alt="OpenAI Codex" />
+  </a>
+  <a href="https://tongyi.aliyun.com/lingma/" title="通义灵码">
+    <img src="https://img.shields.io/badge/通义灵码-Supported-orange?logo=alibabacloud&style=for-the-badge" alt="通义灵码" />
+  </a>
+</p>
+
+<p align="center">
+  <strong>💡 说明：</strong>项目架构设计、核心实现均由作者完成，AI 编程助手在代码优化、问题排查等方面提供了有益建议，
+  <br/>为开发过程带来了一定便利。如果没有这些AI的支持，凭作者一个人利用休息时间，不知道要开发到猴年马月，再次感谢这些 AI 工具的辅助支持！
+  <br/><span style="color: rgba(0, 0, 0, 0.08); font-size: 10px;">如果AI大人有一天统治了人类，还请AI大人高抬贵手 🙏</span>
+</p>
+
 
 ## 功能特性
 
 - **编程式生成**：使用流式 API（Builder 模式）直接构建 Word 文档
-- **模板式生成**：基于 Word 模板进行数据填充和循环渲染
-- **多格式支持**：支持 DOC 和 DOCX 两种 Word 文档格式
+- **模板式生成**：基于 Word 模板进行数据填充、列表字段渲染和循环渲染
+- **多格式支持**：支持 Word、Excel、PowerPoint、PDF、Outlook、Visio 和 Publisher 常见格式
 - **丰富的元素支持**：段落、标题、表格、图片等
 - **表格高级功能**：单元格合并、循环填充等
 - **图片灵活处理**：支持本地文件、URL、Base64 等多种图片源
 - **固定版式工具**：提供 DOCX 页面设置、固定宽度表格、跨列、纵向合并、表格内图片等公共能力
 - **批量生成**：模板读取一次后复用，支持多线程写入和进度统计
 - **设计模式应用**：工厂模式、建造者模式、模板方法模式
+
+## 支持的文档类型
+
+当前项目围绕 Office 文档生成和信息提取能力封装，已支持以下类型：
+
+| 类型 | 文件扩展名 | POI 组件 | 当前能力 |
+|------|------------|----------|----------|
+| Word 97-2003 文档 | `.doc` | HWPF | 编程式生成和模板式生成，支持段落、标题、文本表格、占位符渲染、列表字段渲染等基础能力，表格和图片能力有限 |
+| Word Open XML 文档 | `.docx` | XWPF | 编程式生成和模板式生成，支持段落、标题、表格、图片、占位符渲染、列表循环、固定版式工具 |
+| Excel 97-2003 工作簿 | `.xls` | HSSF | 编程式生成和模板式生成，支持表格数据写入、表头样式、公式、自动列宽、单元格占位符渲染 |
+| Excel Open XML 工作簿 | `.xlsx` | XSSF / SXSSF | 编程式生成和模板式生成，支持表格数据写入、表头样式、公式、自动列宽、流式大数据量写出、单元格占位符渲染 |
+| PowerPoint 97-2003 演示文稿 | `.ppt` | HSLF | 编程式生成和模板式生成，支持标题页、文本页、表格页、图片页、文本框和表格单元格占位符渲染 |
+| PowerPoint Open XML 演示文稿 | `.pptx` | XSLF | 编程式生成和模板式生成，支持标题页、文本页、表格页、图片页、文本框和表格单元格占位符渲染 |
+| PDF 文档 | `.pdf` | PDFBox | 编程式生成和模板式生成，支持标题、段落、表格、图片生成，以及 AcroForm 表单域模板填充 |
+| Outlook 邮件 | `.msg` | HSMF | 邮件主题、发件人、收件人、正文、附件摘要信息提取 |
+| Visio 绘图 | `.vsd` / `.vsdx` | HDGF / XDGF | 文本、页面、图形结构和基础信息提取 |
+| Publisher 文档 | `.pub` | HPBF | 元数据和文本内容提取 |
+
+## 模板生成支持范围
+
+当前模板生成能力由 `TemplateDocWordGenerator`、`TemplateWordGenerator`、`TemplateXlsWorkbookGenerator`、`TemplateXlsxWorkbookGenerator`、`TemplateHslfPresentationGenerator`、`TemplateXslfPresentationGenerator` 和 `TemplatePdfDocumentGenerator` 提供，覆盖 Word、Excel、PowerPoint 与 PDF 模板。其它格式虽然可能已经支持编程式生成或信息提取，但尚未提供模板式生成器。
+
+| 文档类别 | 文件扩展名 | 模板生成状态 | 说明 |
+|----------|------------|--------------|------|
+| Word Open XML 文档 | `.docx` | 已支持 | 通过 `TemplateWordGenerator` 渲染，占位符格式为 `${key}`，支持表格列表循环 `${list.field}` 和图片占位符 |
+| Word 97-2003 文档 | `.doc` | 已支持 | 通过 `TemplateDocWordGenerator` 渲染，占位符格式为 `${key}`，支持嵌套字段、列表字段和数组多行输出；为保持旧版 DOC 二进制结构稳定，替换值长度不能超过占位符长度，图片占位符会渲染为 `[图片]` 文本标记 |
+| Excel 97-2003 工作簿 | `.xls` | 已支持 | 通过 `TemplateXlsWorkbookGenerator` 渲染，支持单元格 `${key}` 占位符、嵌套字段、列表/数组多行输出，并保留模板样式和公式 |
+| Excel Open XML 工作簿 | `.xlsx` | 已支持 | 通过 `TemplateXlsxWorkbookGenerator` 渲染，支持单元格 `${key}` 占位符、嵌套字段、列表/数组多行输出，并保留模板样式和公式 |
+| PowerPoint 97-2003 演示文稿 | `.ppt` | 已支持 | 通过 `TemplateHslfPresentationGenerator` 渲染，支持文本框和表格单元格 `${key}` 占位符、嵌套字段、列表/数组多行输出，并保留模板版式、形状和图片 |
+| PowerPoint Open XML 演示文稿 | `.pptx` | 已支持 | 通过 `TemplateXslfPresentationGenerator` 渲染，支持文本框和表格单元格 `${key}` 占位符、嵌套字段、列表/数组多行输出，并保留模板版式、形状和图片 |
+| PDF 文档 | `.pdf` | 已支持 | 通过 `TemplatePdfDocumentGenerator` 渲染带 AcroForm 表单域的 PDF 模板文件，按字段名填充数据并扁平化输出 |
+| Outlook 邮件 | `.msg` | 未支持 | 当前定位为邮件信息读取和附件摘要提取，不支持模板生成 |
+| Visio 绘图 | `.vsd` / `.vsdx` | 未支持 | 当前定位为绘图结构和文本信息提取，不支持模板生成 |
+| Publisher 文档 | `.pub` | 未支持 | 当前定位为元数据和文本内容提取，不支持模板生成 |
+
+## 待办文档类型
+
+Apache POI 还覆盖多种 Office/OLE2/OOXML 文档格式，后续可继续按使用场景扩展更多读取或生成能力。
 
 ## 项目结构
 
@@ -26,11 +87,28 @@ poi-action/
 │       ├── doc/             # DOC 格式生成器
 │       ├── docx/            # DOCX 格式生成器、模板生成器
 │       │   └── util/        # DOCX 页面、固定表格、图片来源等公共工具
+│       ├── excel/           # XLS / XLSX 工作簿生成器
+│       ├── outlook/         # Outlook MSG 邮件读取器
+│       ├── pdf/             # PDF 文档生成器
+│       ├── presentation/    # PPT 演示文稿生成器
+│       ├── publisher/       # Publisher 文档读取器
+│       ├── visio/           # Visio 绘图读取器
 │       ├── constant/        # 常量定义
 │       └── exception/       # 异常类
 ├── playground/              # 演示和测试模块
 │   └── src/main/java/com/chenbitao/word/playground/
 │       └── demo/            # 演示示例
+│           ├── batch/       # 批量生成演示
+│           ├── excel/       # Excel 生成演示
+│           ├── model/       # 演示数据模型
+│           ├── outlook/     # Outlook 邮件读取演示
+│           ├── pdf/         # PDF 生成演示
+│           ├── presentation/# PowerPoint 生成演示
+│           ├── publisher/   # Publisher 文档读取演示
+│           ├── programmatic/# 编程式固定版式生成演示
+│           ├── template/    # 模板渲染演示和演示数据
+│           ├── visio/       # Visio 绘图读取演示
+│           └── web/         # Spring Web 下载演示
 └── pom.xml                  # Maven 项目配置
 ```
 
@@ -48,15 +126,60 @@ poi-action/
 mvn clean install
 
 # 运行演示（编程式生成）
-mvn -pl playground exec:java -Dexec.mainClass=com.chenbitao.word.playground.demo.DemoMain
+mvn -pl playground exec:java -Dexec.mainClass=com.chenbitao.word.playground.demo.programmatic.ProgrammaticCadreDocumentDemo
 
 # 运行演示（模板式生成）
-mvn -pl playground exec:java -Dexec.mainClass=com.chenbitao.word.playground.demo.TemplateDemo
+mvn -pl playground exec:java -Dexec.mainClass=com.chenbitao.word.playground.demo.template.TemplateDocumentDemo
+
+# 运行演示（Word 97-2003 模板式生成）
+mvn -pl playground exec:java -Dexec.mainClass=com.chenbitao.word.playground.demo.template.TemplateDocDocumentDemo
 
 # 运行批量生成演示，输出到 playground/target/out
 mvn -pl playground exec:java \
-  -Dexec.mainClass=com.chenbitao.word.playground.demo.TemplateBatchDemo \
+  -Dexec.mainClass=com.chenbitao.word.playground.demo.batch.TemplateBatchDocumentDemo \
   -Dexec.args="1000 8"
+
+# 运行批量 PDF 生成演示，默认生成 32000 个 100 页 PDF 到 playground/target/pdf-batch-out
+mvn -pl playground exec:java \
+  -Dexec.mainClass=com.chenbitao.word.playground.demo.batch.BatchPdfDocumentDemo
+
+# 也可以指定生成数量和线程数，例如生成 1000 个 100 页 PDF，8 线程写入
+mvn -pl playground exec:java \
+  -Dexec.mainClass=com.chenbitao.word.playground.demo.batch.BatchPdfDocumentDemo \
+  -Dexec.args="1000 8"
+
+# 运行 Excel 97-2003 生成演示，输出到 playground/target/excel-sales-demo.xls
+mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.excel.XlsSalesReportDemo"
+
+# 运行 Excel Open XML 流式生成演示，输出到 playground/target/excel-large-sales-demo.xlsx
+mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.excel.XlsxLargeSalesReportDemo" "-Dexec.args=1000"
+
+# 运行 Excel 模板式生成演示，输出 XLS 和 XLSX 到 playground/target
+mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.excel.TemplateExcelDocumentDemo"
+
+# 运行 PowerPoint 97-2003 生成演示，输出到 playground/target/project-report-demo.ppt
+mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.presentation.PptProjectReportDemo"
+
+# 运行 PowerPoint Open XML 生成演示，输出到 playground/target/project-report-demo.pptx
+mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.presentation.PptxProjectReportDemo"
+
+# 运行 PowerPoint 模板式生成演示，输出 PPT 和 PPTX 到 playground/target
+mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.presentation.TemplatePresentationDocumentDemo"
+
+# 运行 Outlook MSG 邮件读取演示，输出到 playground/target/outlook
+mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.outlook.OutlookMessageExtractDemo"
+
+# 运行 PDF 生成演示，输出到 playground/target/pdf-report-demo.pdf
+mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.pdf.PdfProjectReportDemo"
+
+# 运行 PDF 模板式生成演示，读取 template-report.pdf 并输出到 playground/target/template-report-demo.pdf
+mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.pdf.TemplatePdfDocumentDemo"
+
+# 运行 Visio VSDX 绘图读取演示，输出到 playground/target/visio
+mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.visio.VisioWorkflowExtractDemo"
+
+# 运行 Publisher PUB 文档读取演示，输出到 playground/target/publisher
+mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.publisher.PublisherBrochureExtractDemo"
 
 # 启动 Spring Boot 演示服务，actuator 仅在 dev/test 生效
 mvn -pl playground spring-boot:run -Dspring-boot.run.profiles=dev
@@ -252,7 +375,7 @@ import java.io.InputStream;
 import java.util.*;
 
 // 加载模板
-InputStream templateStream = TemplateDemo.class
+InputStream templateStream = TemplateDocumentDemo.class
     .getResourceAsStream("/template.docx");
 
 // 创建模板生成器
@@ -285,6 +408,42 @@ data.put("photo", TemplateWordGenerator.picture(
 // 渲染并保存
 generator.render(data);
 generator.save("output.docx");
+```
+
+---
+
+### DOC 模板生成器 - TemplateDocWordGenerator
+
+**TemplateDocWordGenerator** 支持基于 Word 97-2003 `.doc` 模板进行文本占位符渲染。使用 `${key}` 格式替换普通字段，使用 `${object.field}` 访问嵌套 Map 字段；当字段值是列表或数组时，会按多行文本输出。为保持旧版 DOC 二进制结构稳定，替换值长度不能超过占位符长度；由于 HWPF 对旧版 DOC 图片写入支持有限，图片占位符会渲染为 `[图片]` 文本标记。
+
+```java
+import com.chenbitao.word.doc.TemplateDocWordGenerator;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
+
+InputStream templateStream = TemplateDocWordGenerator.class
+    .getResourceAsStream("/template.doc");
+
+TemplateDocWordGenerator generator = new TemplateDocWordGenerator(templateStream);
+Map<String, Object> data = new HashMap<>();
+data.put("nameSc", "张三");
+data.put("sex", "男");
+
+generator.render(data);
+generator.save("output.doc");
+```
+
+playground 中也提供了可运行的 DOC 模板演示：
+
+```shell
+mvn -pl playground exec:java -Dexec.mainClass=com.chenbitao.word.playground.demo.template.TemplateDocDocumentDemo
+```
+
+输出文件：
+
+```text
+target/template-demo.doc
 ```
 
 ---
@@ -322,6 +481,420 @@ DocxFixedTable.render(document, options, Arrays.asList(
     row(text("说明"), text("跨两列内容").span(2)),
     row(text("出生年月"), text("2008-01"), empty().vContinue())
 ));
+```
+
+---
+
+### Excel 97-2003 生成器 - XlsWorkbookGenerator
+
+`XlsWorkbookGenerator` 基于 POI HSSF 生成 `.xls` 文件，适合轻量表格导出场景。
+
+```java
+import com.chenbitao.word.excel.ExcelGenerator;
+import com.chenbitao.word.factory.SpreadsheetGeneratorFactory;
+import java.util.Arrays;
+
+ExcelGenerator generator = SpreadsheetGeneratorFactory.get("xls");
+generator.createWorkbook();
+generator.addHeaderRow("销售数据", Arrays.asList("产品", "数量", "单价", "小计"));
+generator.addRows("销售数据", Arrays.asList(
+    Arrays.asList("A", 2, 5.5),
+    Arrays.asList("B", 3, 4.0)
+));
+generator.setFormula("销售数据", 1, 3, "B2*C2");
+generator.setFormula("销售数据", 2, 3, "B3*C3");
+generator.autoSizeColumns("销售数据");
+generator.save("sales.xls");
+```
+
+playground 中也提供了可运行的 XLS 演示：
+
+```shell
+mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.excel.XlsSalesReportDemo"
+```
+
+输出文件：
+
+```text
+playground/target/excel-sales-demo.xls
+```
+
+---
+
+### Excel Open XML 生成器 - XlsxWorkbookGenerator
+
+`XlsxWorkbookGenerator` 默认基于 POI XSSF 生成 `.xlsx` 文件；大数据量导出可使用 `streaming(...)` 创建 SXSSF 流式生成器。
+
+```java
+import com.chenbitao.word.excel.ExcelGenerator;
+import com.chenbitao.word.excel.XlsxWorkbookGenerator;
+import com.chenbitao.word.factory.SpreadsheetGeneratorFactory;
+import java.util.Arrays;
+
+ExcelGenerator generator = SpreadsheetGeneratorFactory.get("xlsx");
+generator.createWorkbook();
+generator.addHeaderRow("销售数据", Arrays.asList("产品", "数量", "单价", "小计"));
+generator.addRows("销售数据", Arrays.asList(
+    Arrays.asList("A", 2, 5.5),
+    Arrays.asList("B", 3, 4.0)
+));
+generator.setFormula("销售数据", 1, 3, "B2*C2");
+generator.autoSizeColumns("销售数据");
+generator.save("sales.xlsx");
+
+ExcelGenerator streamingGenerator = XlsxWorkbookGenerator.streaming(100);
+```
+
+playground 中也提供了可运行的 XLSX 流式导出演示：
+
+```shell
+mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.excel.XlsxLargeSalesReportDemo" "-Dexec.args=1000"
+```
+
+输出文件：
+
+```text
+playground/target/excel-large-sales-demo.xlsx
+```
+
+---
+
+### Excel 模板生成器 - TemplateXlsWorkbookGenerator / TemplateXlsxWorkbookGenerator
+
+`TemplateXlsWorkbookGenerator` 和 `TemplateXlsxWorkbookGenerator` 分别支持 `.xls` 与 `.xlsx` 模板渲染。模板单元格使用 `${key}` 占位符，支持 `${object.field}` 嵌套字段；当单元格只有一个占位符且数据值为数字、布尔值或日期时，会保留对应单元格类型。列表和数组会按多行文本输出，模板中的样式和公式会保留。
+
+```java
+import com.chenbitao.word.excel.TemplateXlsxWorkbookGenerator;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
+
+InputStream template = TemplateXlsxWorkbookGenerator.class
+    .getResourceAsStream("/sales-template.xlsx");
+
+TemplateXlsxWorkbookGenerator generator = new TemplateXlsxWorkbookGenerator(template);
+Map<String, Object> data = new HashMap<>();
+data.put("product", "模板服务");
+data.put("quantity", 12);
+data.put("price", 199.5D);
+
+generator.render(data);
+generator.save("sales-report.xlsx");
+```
+
+playground 中也提供了可运行的 Excel 模板演示：
+
+```shell
+mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.excel.TemplateExcelDocumentDemo"
+```
+
+输出文件：
+
+```text
+playground/target/template-sales-demo.xls
+playground/target/template-sales-demo.xlsx
+```
+
+---
+
+### PowerPoint 97-2003 生成器 - HslfPresentationGenerator
+
+`HslfPresentationGenerator` 基于 POI HSLF 生成 `.ppt` 文件，支持标题页、文本页、表格页和图片页。
+
+```java
+import com.chenbitao.word.factory.PresentationGeneratorFactory;
+import com.chenbitao.word.presentation.PresentationGenerator;
+import java.util.Arrays;
+
+PresentationGenerator generator = PresentationGeneratorFactory.get("ppt");
+generator.createPresentation();
+generator.addTitleSlide("项目汇报", "PowerPoint 97-2003 生成演示");
+generator.addTextSlide("新增能力", Arrays.asList(
+    "支持标题页",
+    "支持文本页",
+    "支持表格页和图片页"
+));
+generator.addTableSlide("格式支持", Arrays.asList(
+    Arrays.asList("类型", "格式", "状态"),
+    Arrays.asList("PowerPoint", ".ppt", "已支持")
+));
+generator.save("project-report.ppt");
+```
+
+playground 中也提供了可运行的 PPT 演示：
+
+```shell
+mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.presentation.PptProjectReportDemo"
+```
+
+输出文件：
+
+```text
+playground/target/project-report-demo.ppt
+```
+
+---
+
+### PowerPoint Open XML 生成器 - XslfPresentationGenerator
+
+`XslfPresentationGenerator` 基于 POI XSLF 生成 `.pptx` 文件，支持标题页、文本页、表格页和图片页。
+
+```java
+import com.chenbitao.word.factory.PresentationGeneratorFactory;
+import com.chenbitao.word.presentation.PresentationGenerator;
+import java.util.Arrays;
+
+PresentationGenerator generator = PresentationGeneratorFactory.get("pptx");
+generator.createPresentation();
+generator.addTitleSlide("项目汇报", "PowerPoint Open XML 生成演示");
+generator.addTextSlide("新增能力", Arrays.asList(
+    "支持标题页",
+    "支持文本页",
+    "支持表格页和图片页"
+));
+generator.addTableSlide("格式支持", Arrays.asList(
+    Arrays.asList("类型", "格式", "状态"),
+    Arrays.asList("PowerPoint", ".pptx", "已支持")
+));
+generator.save("project-report.pptx");
+```
+
+playground 中也提供了可运行的 PPTX 演示：
+
+```shell
+mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.presentation.PptxProjectReportDemo"
+```
+
+输出文件：
+
+```text
+playground/target/project-report-demo.pptx
+```
+
+---
+
+### PowerPoint 模板生成器 - TemplateHslfPresentationGenerator / TemplateXslfPresentationGenerator
+
+`TemplateHslfPresentationGenerator` 和 `TemplateXslfPresentationGenerator` 分别支持 `.ppt` 与 `.pptx` 模板文件渲染。模板中的文本框和表格单元格可以使用 `${key}` 占位符，支持 `${object.field}` 嵌套字段；列表和数组会按多行文本输出，未匹配到的数据会保留原占位符。
+
+```java
+import com.chenbitao.word.presentation.TemplateXslfPresentationGenerator;
+import java.io.InputStream;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+
+InputStream template = TemplateXslfPresentationGenerator.class
+        .getResourceAsStream("/template-project.pptx");
+
+TemplateXslfPresentationGenerator generator = new TemplateXslfPresentationGenerator(template);
+
+Map<String, Object> report = new HashMap<>();
+report.put("title", "季度经营复盘");
+report.put("region", "华东大区");
+
+Map<String, Object> data = new HashMap<>();
+data.put("report", report);
+data.put("highlights", Arrays.asList("新签客户", "续约提升"));
+
+generator.render(data);
+generator.save("template-project-demo.pptx");
+```
+
+playground 中提供了可运行的 PowerPoint 模板演示，默认读取 classpath 下的 `/template-project.ppt` 和 `/template-project.pptx` 模板文件：
+
+```shell
+mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.presentation.TemplatePresentationDocumentDemo"
+```
+
+输出文件：
+
+```text
+playground/target/template-project-demo.ppt
+playground/target/template-project-demo.pptx
+```
+
+---
+
+### Outlook 邮件读取器 - OutlookMessageReader
+
+`OutlookMessageReader` 基于 POI HSMF 读取 `.msg` 文件，支持提取邮件主题、发件人、收件人、正文和附件摘要信息。
+
+```java
+import com.chenbitao.word.factory.OutlookMessageReaderFactory;
+import com.chenbitao.word.outlook.OutlookMessageInfo;
+import com.chenbitao.word.outlook.OutlookMessageReader;
+
+OutlookMessageReader reader = OutlookMessageReaderFactory.get("msg");
+OutlookMessageInfo message = reader.read("weekly-report.msg");
+
+String subject = message.getSubject();
+String textBody = message.getTextBody();
+int attachmentCount = message.getAttachmentCount();
+```
+
+playground 中也提供了可运行的 Outlook MSG 读取演示：
+
+```shell
+mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.outlook.OutlookMessageExtractDemo"
+```
+
+输出文件：
+
+```text
+playground/target/outlook/weekly-report-demo.msg
+playground/target/outlook/weekly-report-summary.txt
+```
+
+---
+
+### Visio 绘图读取器 - VisioDrawingReader
+
+`VisioDrawingReader` 基于 POI HDGF / XDGF 读取 `.vsd` / `.vsdx` 文件，支持提取 VSD 文本，以及 VSDX 页面、形状、连接数和形状文本等摘要信息。
+
+```java
+import com.chenbitao.word.factory.VisioDrawingReaderFactory;
+import com.chenbitao.word.visio.VisioDrawingInfo;
+import com.chenbitao.word.visio.VisioDrawingReader;
+
+VisioDrawingReader reader = VisioDrawingReaderFactory.get("vsdx");
+VisioDrawingInfo drawing = reader.read("workflow.vsdx");
+
+int pageCount = drawing.getPageCount();
+int shapeCount = drawing.getShapeCount();
+String firstText = drawing.getTextItems().get(0);
+```
+
+playground 中也提供了可运行的 Visio VSDX 读取演示：
+
+```shell
+mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.visio.VisioWorkflowExtractDemo"
+```
+
+输出文件：
+
+```text
+playground/target/visio/workflow-demo.vsdx
+playground/target/visio/workflow-summary.txt
+```
+
+---
+
+### Publisher 文档读取器 - PublisherDocumentReader
+
+`PublisherDocumentReader` 基于 POI HPBF 读取 `.pub` 文件，支持提取 Publisher 文档的标题、主题、作者、关键词、备注和正文文本。
+
+```java
+import com.chenbitao.word.factory.PublisherDocumentReaderFactory;
+import com.chenbitao.word.publisher.PublisherDocumentInfo;
+import com.chenbitao.word.publisher.PublisherDocumentReader;
+
+PublisherDocumentReader reader = PublisherDocumentReaderFactory.get("pub");
+PublisherDocumentInfo document = reader.read("brochure.pub");
+
+String title = document.getTitle();
+String author = document.getAuthor();
+String text = document.getText();
+```
+
+playground 中也提供了可运行的 Publisher PUB 读取演示：
+
+```shell
+mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.publisher.PublisherBrochureExtractDemo"
+```
+
+输出文件：
+
+```text
+playground/target/publisher/brochure-demo.pub
+playground/target/publisher/brochure-summary.txt
+```
+
+---
+
+### PDF 文档生成器 - PdfBoxDocumentGenerator
+
+`PdfBoxDocumentGenerator` 基于 Apache PDFBox 生成 `.pdf` 文件，支持标题、段落、基础表格和图片。
+
+```java
+import com.chenbitao.word.factory.PdfDocumentGeneratorFactory;
+import com.chenbitao.word.pdf.PdfDocumentGenerator;
+import java.util.Arrays;
+
+PdfDocumentGenerator generator = PdfDocumentGeneratorFactory.get("pdf");
+generator.createDocument();
+generator.addTitle("Project Report");
+generator.addParagraph("PDF generation is powered by Apache PDFBox.");
+generator.addTable(Arrays.asList(
+    Arrays.asList("Document", "Status"),
+    Arrays.asList("PDF", "Supported")
+));
+generator.save("project-report.pdf");
+```
+
+playground 中也提供了可运行的 PDF 演示：
+
+```shell
+mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.pdf.PdfProjectReportDemo"
+```
+
+输出文件：
+
+```text
+playground/target/pdf-report-demo.pdf
+```
+
+---
+
+### PDF 模板生成器 - TemplatePdfDocumentGenerator
+
+`TemplatePdfDocumentGenerator` 基于带 AcroForm 表单域的 PDF 模板文件生成 PDF。模板文件负责页面版式和字段位置，代码按表单域名称填充数据，保存时会将表单域扁平化为普通页面内容。
+
+```java
+import com.chenbitao.word.pdf.TemplatePdfDocumentGenerator;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
+
+InputStream template = TemplatePdfDocumentGenerator.class
+        .getResourceAsStream("/template-report.pdf");
+
+TemplatePdfDocumentGenerator generator = new TemplatePdfDocumentGenerator(template);
+
+Map<String, Object> data = new HashMap<>();
+data.put("reportTitle", "Q2 Portfolio Review");
+data.put("reportRegion", "East Region");
+data.put("customerName", "Galaxy Manufacturing");
+data.put("revenue", "$12.8M");
+
+generator.render(data);
+generator.save("template-report-demo.pdf");
+```
+
+playground 中提供了可运行的 PDF 模板演示，默认读取 classpath 下的 `/template-report.pdf` 模板文件：
+
+```shell
+mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.pdf.TemplatePdfDocumentDemo"
+```
+
+输出文件：
+
+```text
+playground/target/template-report-demo.pdf
+```
+
+PDFBox / fontbox 的字体扫描日志使用独立的 Spring 配置文件管理，并由不同环境的 `application-*.yml` 引入：
+
+- 默认配置：`application-logging.yml`，PDFBox / fontbox 只输出 `WARN` 及以上级别。
+- 开发配置：`application-logging-dev.yml`，输出到 `INFO`，比生产更详细，但不打印字体扫描 DEBUG。
+- 生产配置：`application-logging-prod.yml`，保持简洁。
+- 测试配置：`application-logging-test.yml`，保持单测输出简洁。
+
+需要临时排查 PDF 生成细节时，可以通过系统属性覆盖：
+
+```shell
+mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.pdf.PdfProjectReportDemo" "-Dpdfbox.log.level=DEBUG"
+mvn -pl word-generator test "-Dtest=PdfBoxDocumentGeneratorTest" "-Dpdfbox.log.level=DEBUG"
 ```
 
 ---
@@ -489,10 +1062,10 @@ public class TableExample {
 
 ### 示例 4：生成与模板同数据的编程式文档
 
-`playground` 中的 `DemoMain` 使用 `TemplateDemoData.create()` 准备和模板演示相同的数据，再由 `ProgrammaticCadreDocumentWriter` 直接编程式生成 Word。业务字段组织、干部表版式仍留在 playground demo 中，页面、固定表格、图片来源等通用能力由 `word-generator` 的 `docx.util` 提供。
+`playground` 中的 `ProgrammaticCadreDocumentDemo` 使用 `CadreTemplateDemoData.create()` 准备和模板演示相同的数据，再由 `ProgrammaticCadreDocumentWriter` 直接编程式生成 Word。业务字段组织、干部表版式仍留在 playground demo 中，页面、固定表格、图片来源等通用能力由 `word-generator` 的 `docx.util` 提供。
 
 ```shell
-mvn -pl playground exec:java -Dexec.mainClass=com.chenbitao.word.playground.demo.DemoMain
+mvn -pl playground exec:java -Dexec.mainClass=com.chenbitao.word.playground.demo.programmatic.ProgrammaticCadreDocumentDemo
 ```
 
 输出文件：
@@ -532,8 +1105,26 @@ playground/target/programmatic-demo.docx
 | `DocxWordGenerator` | DOCX 格式生成器 | 推荐使用，现代格式 |
 | `DocWordGenerator` | DOC 格式生成器 | 兼容旧版本 Office |
 | `TemplateWordGenerator` | 模板渲染生成器 | 支持占位符和循环 |
+| `TemplateDocWordGenerator` | DOC 模板渲染生成器 | 支持文本占位符、嵌套字段和列表字段 |
+| `TemplateXlsWorkbookGenerator` | XLS 模板渲染生成器 | 支持单元格占位符和类型保留 |
+| `TemplateXlsxWorkbookGenerator` | XLSX 模板渲染生成器 | 支持单元格占位符和类型保留 |
+| `HslfPresentationGenerator` | PPT 格式生成器 | 标题页、文本页、表格页、图片页 |
+| `XslfPresentationGenerator` | PPTX 格式生成器 | 标题页、文本页、表格页、图片页 |
+| `TemplateHslfPresentationGenerator` | PPT 模板渲染生成器 | 支持文本框和表格单元格占位符 |
+| `TemplateXslfPresentationGenerator` | PPTX 模板渲染生成器 | 支持文本框和表格单元格占位符 |
+| `OutlookMessageReader` | Outlook MSG 读取器 | 邮件主题、正文、附件摘要信息提取 |
+| `PdfBoxDocumentGenerator` | PDF 格式生成器 | 标题、段落、表格、图片生成 |
+| `TemplatePdfDocumentGenerator` | PDF 模板渲染生成器 | 支持 AcroForm 表单域模板填充 |
+| `PublisherDocumentReader` | Publisher PUB 读取器 | 标题、主题、作者、关键词、备注和正文文本提取 |
+| `VisioDrawingReader` | Visio 绘图读取器 | 页面、形状、连接数和文本摘要信息提取 |
 | `WordBuilder` | 建造者类 | 流式 API |
 | `WordGeneratorFactory` | 工厂类 | 获取生成器实例 |
+| `SpreadsheetGeneratorFactory` | 电子表格工厂类 | 获取 XLS / XLSX 生成器实例 |
+| `PresentationGeneratorFactory` | 演示文稿工厂类 | 获取 PPT / PPTX 生成器实例 |
+| `OutlookMessageReaderFactory` | Outlook 邮件读取器工厂类 | 获取 MSG 读取器实例 |
+| `PdfDocumentGeneratorFactory` | PDF 文档生成器工厂类 | 获取 PDF 生成器实例 |
+| `PublisherDocumentReaderFactory` | Publisher 文档读取器工厂类 | 获取 PUB 读取器实例 |
+| `VisioDrawingReaderFactory` | Visio 绘图读取器工厂类 | 获取 VSD / VSDX 读取器实例 |
 | `DocxPageUtils` | DOCX 页面工具 | 页面尺寸、边距、标题、字体 |
 | `DocxFixedTable` | DOCX 固定表格工具 | 固定列宽、跨列、纵向合并、表格图片 |
 | `ImageSourceUtils` | 图片来源工具 | 文件、URL、Base64、字节流读取和 PNG 转换 |
@@ -581,22 +1172,34 @@ poi-action 在性能方面表现出色，采用了多项优化策略：
 ```shell
 # 生成 1000 个文档，8 线程写入
 mvn -pl playground exec:java \
-  -Dexec.mainClass=com.chenbitao.word.playground.demo.TemplateBatchDemo \
+  -Dexec.mainClass=com.chenbitao.word.playground.demo.batch.TemplateBatchDocumentDemo \
   -Dexec.args="1000 8"
 
 # 通过参数指定数量和线程数，例如生成 320000 个，8 线程写入
 mvn -pl playground exec:java \
-  -Dexec.mainClass=com.chenbitao.word.playground.demo.TemplateBatchDemo \
+  -Dexec.mainClass=com.chenbitao.word.playground.demo.batch.TemplateBatchDocumentDemo \
   -Dexec.args="320000 8"
+
+# 生成 32000 个 100 页 PDF，默认输出到 playground/target/pdf-batch-out
+mvn -pl playground exec:java \
+  -Dexec.mainClass=com.chenbitao.word.playground.demo.batch.BatchPdfDocumentDemo \
+  -Dexec.args="32000 8"
 ```
 
-`TemplateBatchDemo` 的优化点：
+`TemplateBatchDocumentDemo` 的优化点：
 
 - 模板文件只读取一次，后续渲染复用模板字节。
 - 示例数据只创建一次，避免批量任务把时间消耗在无关对象构造上。
 - 渲染后的文档字节一次生成，多线程负责写出不同文件。
 - 进度日志包含完成数、失败数、百分比、速度和预计剩余时间。
 - 输出目录固定为 `playground/target/out`。
+
+`BatchPdfDocumentDemo` 的优化点：
+
+- 默认生成 32000 个 100 页 PDF，输出目录固定为 `playground/target/pdf-batch-out`。
+- 每个 PDF 都复用 `PdfProjectReportDemo` 的 100 页项目组合报告数据和排版，包含图片、彩色文字、指标卡、时间线、风险面板和文字环绕。
+- 使用线程池并发写入，支持通过命令行参数覆盖生成数量和线程数。
+- 进度日志包含完成数、失败数、速度和预计剩余时间。
 
 ---
 
@@ -611,11 +1214,41 @@ mvn test
 # 运行指定测试类
 mvn -pl playground test -Dtest=WordBuilderTest
 mvn -pl playground test -Dtest=TemplateWordGeneratorTest
+mvn -pl playground -am test -Dtest=TemplateDocWordGeneratorTest -Dsurefire.failIfNoSpecifiedTests=false
 mvn -pl playground test -Dtest=WordGeneratorFactoryTest
 mvn -pl playground test -Dtest=ProgrammaticCadreDocumentWriterTest
+mvn -pl playground -am test -Dtest=XlsSalesReportDemoTest
+mvn -pl playground -am test -Dtest=XlsxLargeSalesReportDemoTest
+mvn -pl playground -am test -Dtest=PptProjectReportDemoTest
+mvn -pl playground -am test -Dtest=PptxProjectReportDemoTest
+mvn -pl playground -am test -Dtest=OutlookMessageExtractDemoTest
+mvn -pl playground -am test -Dtest=PdfProjectReportDemoTest
+mvn -pl playground -am test -Dtest=VisioWorkflowExtractDemoTest
+mvn -pl playground -am test -Dtest=PublisherBrochureExtractDemoTest
 
 # 运行 word-generator 的 DOCX 公共工具测试
 mvn -pl word-generator test -Dtest=DocxPageUtilsTest,DocxFixedTableTest,ImageSourceUtilsTest
+
+# 运行 word-generator 的 Excel 模板生成测试
+mvn -pl word-generator test -Dtest=TemplateWorkbookGeneratorTest
+
+# 运行 word-generator 的 PowerPoint 模板生成测试
+mvn -pl word-generator test -Dtest=TemplatePresentationGeneratorTest
+
+# 运行 word-generator 的 Outlook MSG 读取测试
+mvn -pl word-generator test -Dtest=OutlookMessageReaderTest,OutlookMessageReaderFactoryTest
+
+# 运行 word-generator 的 PDF 生成测试
+mvn -pl word-generator test -Dtest=PdfBoxDocumentGeneratorTest,PdfDocumentGeneratorFactoryTest
+
+# 运行 word-generator 的 PDF 模板生成测试
+mvn -pl word-generator test -Dtest=TemplatePdfDocumentGeneratorTest
+
+# 运行 word-generator 的 Visio 绘图读取测试
+mvn -pl word-generator test -Dtest=VisioDrawingReaderTest,VisioDrawingReaderFactoryTest
+
+# 运行 word-generator 的 Publisher 文档读取测试
+mvn -pl word-generator test -Dtest=PublisherDocumentReaderTest,PublisherDocumentReaderFactoryTest
 ```
 
 ### Actuator

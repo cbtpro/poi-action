@@ -1,0 +1,4 @@
+logging:
+  level:
+    org.apache.pdfbox: INFO
+    org.apache.fontbox: INFO
