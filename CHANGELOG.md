@@ -4,6 +4,15 @@
 
 ### Added
 
+- 新增 PDF 模板生成能力：
+  - `TemplatePdfDocumentGenerator` 支持基于带 AcroForm 表单域的 PDF 模板文件生成 PDF。
+  - 支持按表单域名称填充文本、列表和数组多行内容，保存时将表单域扁平化为普通页面内容。
+- 新增 PDF 模板文件：
+  - `template-report.pdf` 作为 playground 演示模板和 word-generator 测试模板。
+- 新增 playground PDF 模板演示：
+  - `TemplatePdfDocumentDemo` 读取 `/template-report.pdf` 并输出 `playground/target/template-report-demo.pdf`。
+- 新增 PDF 模板相关测试：
+  - 覆盖真实 PDF 模板文件读取、AcroForm 字段填充、列表字段和扁平化输出。
 - 新增 PowerPoint 模板生成能力：
   - `TemplateHslfPresentationGenerator` 支持 `.ppt` 模板文本框和表格单元格占位符渲染。
   - `TemplateXslfPresentationGenerator` 支持 `.pptx` 模板文本框和表格单元格占位符渲染。
@@ -37,6 +46,8 @@
 ### Changed
 
 - 更新 README：
+  - 将 PDF `.pdf` 模板生成状态改为已支持。
+  - 增加 PDF 模板生成器 API 示例、playground 运行命令和测试命令。
   - 将 PowerPoint `.ppt` / `.pptx` 模板生成状态改为已支持。
   - 增加 PowerPoint 模板生成器 API 示例、playground 运行命令和测试命令。
   - 将 Excel `.xls` / `.xlsx` 模板生成状态改为已支持。
@@ -46,6 +57,8 @@
 
 ### Verified
 
+- `mvn -pl word-generator test "-Dtest=TemplatePdfDocumentGeneratorTest"`
+- `mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.pdf.TemplatePdfDocumentDemo"`
 - `mvn -pl word-generator test "-Dtest=TemplatePresentationGeneratorTest"`
 - `mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.presentation.TemplatePresentationDocumentDemo"`
 - `mvn -pl playground -am test "-Dtest=TemplateDocWordGeneratorTest" "-Dsurefire.failIfNoSpecifiedTests=false"`

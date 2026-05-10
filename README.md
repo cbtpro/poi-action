@@ -26,14 +26,14 @@
 | Excel Open XML 工作簿 | `.xlsx` | XSSF / SXSSF | 编程式生成和模板式生成，支持表格数据写入、表头样式、公式、自动列宽、流式大数据量写出、单元格占位符渲染 |
 | PowerPoint 97-2003 演示文稿 | `.ppt` | HSLF | 编程式生成和模板式生成，支持标题页、文本页、表格页、图片页、文本框和表格单元格占位符渲染 |
 | PowerPoint Open XML 演示文稿 | `.pptx` | XSLF | 编程式生成和模板式生成，支持标题页、文本页、表格页、图片页、文本框和表格单元格占位符渲染 |
-| PDF 文档 | `.pdf` | PDFBox | 标题、段落、表格、图片生成 |
+| PDF 文档 | `.pdf` | PDFBox | 编程式生成和模板式生成，支持标题、段落、表格、图片生成，以及 AcroForm 表单域模板填充 |
 | Outlook 邮件 | `.msg` | HSMF | 邮件主题、发件人、收件人、正文、附件摘要信息提取 |
 | Visio 绘图 | `.vsd` / `.vsdx` | HDGF / XDGF | 文本、页面、图形结构和基础信息提取 |
 | Publisher 文档 | `.pub` | HPBF | 元数据和文本内容提取 |
 
 ## 模板生成支持范围
 
-当前模板生成能力由 `TemplateDocWordGenerator`、`TemplateWordGenerator`、`TemplateXlsWorkbookGenerator`、`TemplateXlsxWorkbookGenerator`、`TemplateHslfPresentationGenerator` 和 `TemplateXslfPresentationGenerator` 提供，覆盖 Word、Excel 与 PowerPoint 模板。其它格式虽然可能已经支持编程式生成或信息提取，但尚未提供模板式生成器。
+当前模板生成能力由 `TemplateDocWordGenerator`、`TemplateWordGenerator`、`TemplateXlsWorkbookGenerator`、`TemplateXlsxWorkbookGenerator`、`TemplateHslfPresentationGenerator`、`TemplateXslfPresentationGenerator` 和 `TemplatePdfDocumentGenerator` 提供，覆盖 Word、Excel、PowerPoint 与 PDF 模板。其它格式虽然可能已经支持编程式生成或信息提取，但尚未提供模板式生成器。
 
 | 文档类别 | 文件扩展名 | 模板生成状态 | 说明 |
 |----------|------------|--------------|------|
@@ -43,7 +43,7 @@
 | Excel Open XML 工作簿 | `.xlsx` | 已支持 | 通过 `TemplateXlsxWorkbookGenerator` 渲染，支持单元格 `${key}` 占位符、嵌套字段、列表/数组多行输出，并保留模板样式和公式 |
 | PowerPoint 97-2003 演示文稿 | `.ppt` | 已支持 | 通过 `TemplateHslfPresentationGenerator` 渲染，支持文本框和表格单元格 `${key}` 占位符、嵌套字段、列表/数组多行输出，并保留模板版式、形状和图片 |
 | PowerPoint Open XML 演示文稿 | `.pptx` | 已支持 | 通过 `TemplateXslfPresentationGenerator` 渲染，支持文本框和表格单元格 `${key}` 占位符、嵌套字段、列表/数组多行输出，并保留模板版式、形状和图片 |
-| PDF 文档 | `.pdf` | 未支持 | 当前支持基于 PDFBox 的编程式生成，尚未提供 PDF 模板填充能力 |
+| PDF 文档 | `.pdf` | 已支持 | 通过 `TemplatePdfDocumentGenerator` 渲染带 AcroForm 表单域的 PDF 模板文件，按字段名填充数据并扁平化输出 |
 | Outlook 邮件 | `.msg` | 未支持 | 当前定位为邮件信息读取和附件摘要提取，不支持模板生成 |
 | Visio 绘图 | `.vsd` / `.vsdx` | 未支持 | 当前定位为绘图结构和文本信息提取，不支持模板生成 |
 | Publisher 文档 | `.pub` | 未支持 | 当前定位为元数据和文本内容提取，不支持模板生成 |
@@ -148,6 +148,9 @@ mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.dem
 
 # 运行 PDF 生成演示，输出到 playground/target/pdf-report-demo.pdf
 mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.pdf.PdfProjectReportDemo"
+
+# 运行 PDF 模板式生成演示，读取 template-report.pdf 并输出到 playground/target/template-report-demo.pdf
+mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.pdf.TemplatePdfDocumentDemo"
 
 # 运行 Visio VSDX 绘图读取演示，输出到 playground/target/visio
 mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.visio.VisioWorkflowExtractDemo"
@@ -818,6 +821,45 @@ mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.dem
 playground/target/pdf-report-demo.pdf
 ```
 
+---
+
+### PDF 模板生成器 - TemplatePdfDocumentGenerator
+
+`TemplatePdfDocumentGenerator` 基于带 AcroForm 表单域的 PDF 模板文件生成 PDF。模板文件负责页面版式和字段位置，代码按表单域名称填充数据，保存时会将表单域扁平化为普通页面内容。
+
+```java
+import com.chenbitao.word.pdf.TemplatePdfDocumentGenerator;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
+
+InputStream template = TemplatePdfDocumentGenerator.class
+        .getResourceAsStream("/template-report.pdf");
+
+TemplatePdfDocumentGenerator generator = new TemplatePdfDocumentGenerator(template);
+
+Map<String, Object> data = new HashMap<>();
+data.put("reportTitle", "Q2 Portfolio Review");
+data.put("reportRegion", "East Region");
+data.put("customerName", "Galaxy Manufacturing");
+data.put("revenue", "$12.8M");
+
+generator.render(data);
+generator.save("template-report-demo.pdf");
+```
+
+playground 中提供了可运行的 PDF 模板演示，默认读取 classpath 下的 `/template-report.pdf` 模板文件：
+
+```shell
+mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.pdf.TemplatePdfDocumentDemo"
+```
+
+输出文件：
+
+```text
+playground/target/template-report-demo.pdf
+```
+
 PDFBox / fontbox 的字体扫描日志使用独立的 Spring 配置文件管理，并由不同环境的 `application-*.yml` 引入：
 
 - 默认配置：`application-logging.yml`，PDFBox / fontbox 只输出 `WARN` 及以上级别。
@@ -1049,6 +1091,7 @@ playground/target/programmatic-demo.docx
 | `TemplateXslfPresentationGenerator` | PPTX 模板渲染生成器 | 支持文本框和表格单元格占位符 |
 | `OutlookMessageReader` | Outlook MSG 读取器 | 邮件主题、正文、附件摘要信息提取 |
 | `PdfBoxDocumentGenerator` | PDF 格式生成器 | 标题、段落、表格、图片生成 |
+| `TemplatePdfDocumentGenerator` | PDF 模板渲染生成器 | 支持 AcroForm 表单域模板填充 |
 | `PublisherDocumentReader` | Publisher PUB 读取器 | 标题、主题、作者、关键词、备注和正文文本提取 |
 | `VisioDrawingReader` | Visio 绘图读取器 | 页面、形状、连接数和文本摘要信息提取 |
 | `WordBuilder` | 建造者类 | 流式 API |
@@ -1174,6 +1217,9 @@ mvn -pl word-generator test -Dtest=OutlookMessageReaderTest,OutlookMessageReader
 
 # 运行 word-generator 的 PDF 生成测试
 mvn -pl word-generator test -Dtest=PdfBoxDocumentGeneratorTest,PdfDocumentGeneratorFactoryTest
+
+# 运行 word-generator 的 PDF 模板生成测试
+mvn -pl word-generator test -Dtest=TemplatePdfDocumentGeneratorTest
 
 # 运行 word-generator 的 Visio 绘图读取测试
 mvn -pl word-generator test -Dtest=VisioDrawingReaderTest,VisioDrawingReaderFactoryTest
