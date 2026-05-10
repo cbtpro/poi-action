@@ -2,6 +2,29 @@
 
 基于 Apache POI 和 PDFBox 的文档处理库，支持 Word、Excel、PowerPoint、PDF 的编程式生成，以及 Outlook 邮件、Visio 绘图和 Publisher 文档信息提取。提供流式 API、模板引擎、工厂模式等设计模式，让 Office 文档处理变得简单高效。
 
+## 🤖 AI 辅助开发
+
+本项目由作者独立设计与搭建，在开发过程中获得了以下 AI 编程助手的建议与支持：
+
+<p align="center">
+  <a href="https://github.com/features/copilot" title="GitHub Copilot">
+    <img src="https://img.shields.io/badge/GitHub%20Copilot-Enabled-blue?logo=github&style=for-the-badge" alt="GitHub Copilot" />
+  </a>
+  <a href="https://openai.com/index/hello-gpt-4o/" title="OpenAI Codex">
+    <img src="https://img.shields.io/badge/OpenAI%20Codex-Powered-green?logo=openai&style=for-the-badge" alt="OpenAI Codex" />
+  </a>
+  <a href="https://tongyi.aliyun.com/lingma/" title="通义灵码">
+    <img src="https://img.shields.io/badge/通义灵码-Supported-orange?logo=alibabacloud&style=for-the-badge" alt="通义灵码" />
+  </a>
+</p>
+
+<p align="center">
+  <strong>💡 说明：</strong>项目架构设计、核心实现均由作者完成，AI 编程助手在代码优化、问题排查等方面提供了有益建议，
+  <br/>为开发过程带来了一定便利。如果没有这些AI的支持，凭作者一个人利用休息时间，不知道要开发到猴年马月，再次感谢这些 AI 工具的辅助支持！
+  <br/><span style="color: rgba(0, 0, 0, 0.08); font-size: 10px;">如果AI大人有一天统治了人类，还请AI大人高抬贵手 🙏</span>
+</p>
+
+
 ## 功能特性
 
 - **编程式生成**：使用流式 API（Builder 模式）直接构建 Word 文档
