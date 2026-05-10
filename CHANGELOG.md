@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-05-10
+
+### Added
+
+- 新增 Word 97-2003 `.doc` 模板生成能力：
+  - `TemplateDocWordGenerator` 支持基于 HWPF 渲染 DOC 模板。
+  - 支持 `${key}` 文本占位符、`${object.field}` 嵌套字段、列表字段和数组多行输出。
+  - 为保持旧版 DOC 二进制结构稳定，替换值长度不能超过占位符长度。
+  - 图片占位符会渲染为 `[图片]` 文本标记，用于兼容 HWPF 对旧版 DOC 图片写入能力有限的场景。
+- 新增 playground DOC 模板演示：
+  - `TemplateDocDocumentDemo` 读取 `/template.doc` 并输出 `target/template-demo.doc`。
+- 新增 DOC 模板相关测试：
+  - 覆盖真实 `.doc` 模板渲染、列表字段渲染、图片占位符文本标记和缺失字段保留。
+
+### Changed
+
+- 更新 README：
+  - 将 Word 97-2003 `.doc` 模板生成状态改为已支持。
+  - 增加 `TemplateDocWordGenerator` API 示例、playground 运行命令和测试命令。
+
+### Verified
+
+- `mvn -pl playground -am test "-Dtest=TemplateDocWordGeneratorTest" "-Dsurefire.failIfNoSpecifiedTests=false"`
+- `mvn -pl playground exec:java "-Dexec.mainClass=com.chenbitao.word.playground.demo.template.TemplateDocDocumentDemo"`
+
 ## 2026-05-09
 
 ### Added

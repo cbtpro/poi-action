@@ -5,7 +5,7 @@
 ## 功能特性
 
 - **编程式生成**：使用流式 API（Builder 模式）直接构建 Word 文档
-- **模板式生成**：基于 Word 模板进行数据填充和循环渲染
+- **模板式生成**：基于 Word 模板进行数据填充、列表字段渲染和循环渲染
 - **多格式支持**：支持 Word、Excel、PowerPoint、PDF、Outlook、Visio 和 Publisher 常见格式
 - **丰富的元素支持**：段落、标题、表格、图片等
 - **表格高级功能**：单元格合并、循环填充等
@@ -20,7 +20,7 @@
 
 | 类型 | 文件扩展名 | POI 组件 | 当前能力 |
 |------|------------|----------|----------|
-| Word 97-2003 文档 | `.doc` | HWPF | 编程式生成，支持段落、标题、文本表格等基础能力，表格和图片能力有限 |
+| Word 97-2003 文档 | `.doc` | HWPF | 编程式生成和模板式生成，支持段落、标题、文本表格、占位符渲染、列表字段渲染等基础能力，表格和图片能力有限 |
 | Word Open XML 文档 | `.docx` | XWPF | 编程式生成和模板式生成，支持段落、标题、表格、图片、占位符渲染、列表循环、固定版式工具 |
 | Excel 97-2003 工作簿 | `.xls` | HSSF | 表格数据写入、表头样式、公式、自动列宽 |
 | Excel Open XML 工作簿 | `.xlsx` | XSSF / SXSSF | 表格数据写入、表头样式、公式、自动列宽、流式大数据量写出 |
@@ -30,6 +30,23 @@
 | Outlook 邮件 | `.msg` | HSMF | 邮件主题、发件人、收件人、正文、附件摘要信息提取 |
 | Visio 绘图 | `.vsd` / `.vsdx` | HDGF / XDGF | 文本、页面、图形结构和基础信息提取 |
 | Publisher 文档 | `.pub` | HPBF | 元数据和文本内容提取 |
+
+## 模板生成支持范围
+
+当前模板生成能力由 `TemplateDocWordGenerator` 和 `TemplateWordGenerator` 提供，覆盖 Word 97-2003 与 Word Open XML 两类模板。其它格式虽然可能已经支持编程式生成或信息提取，但尚未提供模板式生成器。
+
+| 文档类别 | 文件扩展名 | 模板生成状态 | 说明 |
+|----------|------------|--------------|------|
+| Word Open XML 文档 | `.docx` | 已支持 | 通过 `TemplateWordGenerator` 渲染，占位符格式为 `${key}`，支持表格列表循环 `${list.field}` 和图片占位符 |
+| Word 97-2003 文档 | `.doc` | 已支持 | 通过 `TemplateDocWordGenerator` 渲染，占位符格式为 `${key}`，支持嵌套字段、列表字段和数组多行输出；为保持旧版 DOC 二进制结构稳定，替换值长度不能超过占位符长度，图片占位符会渲染为 `[图片]` 文本标记 |
+| Excel 97-2003 工作簿 | `.xls` | 未支持 | 当前支持编程式写入表格、公式和样式，尚未提供模板填充能力 |
+| Excel Open XML 工作簿 | `.xlsx` | 未支持 | 当前支持编程式写入和 SXSSF 流式大数据量写出，尚未提供模板填充能力 |
+| PowerPoint 97-2003 演示文稿 | `.ppt` | 未支持 | 当前支持编程式生成标题页、文本页、表格页和图片页，尚未提供模板渲染能力 |
+| PowerPoint Open XML 演示文稿 | `.pptx` | 未支持 | 当前支持编程式生成标题页、文本页、表格页和图片页，尚未提供模板渲染能力 |
+| PDF 文档 | `.pdf` | 未支持 | 当前支持基于 PDFBox 的编程式生成，尚未提供 PDF 模板填充能力 |
+| Outlook 邮件 | `.msg` | 未支持 | 当前定位为邮件信息读取和附件摘要提取，不支持模板生成 |
+| Visio 绘图 | `.vsd` / `.vsdx` | 未支持 | 当前定位为绘图结构和文本信息提取，不支持模板生成 |
+| Publisher 文档 | `.pub` | 未支持 | 当前定位为元数据和文本内容提取，不支持模板生成 |
 
 ## 待办文档类型
 
@@ -90,6 +107,9 @@ mvn -pl playground exec:java -Dexec.mainClass=com.chenbitao.word.playground.demo
 
 # 运行演示（模板式生成）
 mvn -pl playground exec:java -Dexec.mainClass=com.chenbitao.word.playground.demo.template.TemplateDocumentDemo
+
+# 运行演示（Word 97-2003 模板式生成）
+mvn -pl playground exec:java -Dexec.mainClass=com.chenbitao.word.playground.demo.template.TemplateDocDocumentDemo
 
 # 运行批量生成演示，输出到 playground/target/out
 mvn -pl playground exec:java \
@@ -356,6 +376,42 @@ data.put("photo", TemplateWordGenerator.picture(
 // 渲染并保存
 generator.render(data);
 generator.save("output.docx");
+```
+
+---
+
+### DOC 模板生成器 - TemplateDocWordGenerator
+
+**TemplateDocWordGenerator** 支持基于 Word 97-2003 `.doc` 模板进行文本占位符渲染。使用 `${key}` 格式替换普通字段，使用 `${object.field}` 访问嵌套 Map 字段；当字段值是列表或数组时，会按多行文本输出。为保持旧版 DOC 二进制结构稳定，替换值长度不能超过占位符长度；由于 HWPF 对旧版 DOC 图片写入支持有限，图片占位符会渲染为 `[图片]` 文本标记。
+
+```java
+import com.chenbitao.word.doc.TemplateDocWordGenerator;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
+
+InputStream templateStream = TemplateDocWordGenerator.class
+    .getResourceAsStream("/template.doc");
+
+TemplateDocWordGenerator generator = new TemplateDocWordGenerator(templateStream);
+Map<String, Object> data = new HashMap<>();
+data.put("nameSc", "张三");
+data.put("sex", "男");
+
+generator.render(data);
+generator.save("output.doc");
+```
+
+playground 中也提供了可运行的 DOC 模板演示：
+
+```shell
+mvn -pl playground exec:java -Dexec.mainClass=com.chenbitao.word.playground.demo.template.TemplateDocDocumentDemo
+```
+
+输出文件：
+
+```text
+target/template-demo.doc
 ```
 
 ---
@@ -897,6 +953,7 @@ playground/target/programmatic-demo.docx
 | `DocxWordGenerator` | DOCX 格式生成器 | 推荐使用，现代格式 |
 | `DocWordGenerator` | DOC 格式生成器 | 兼容旧版本 Office |
 | `TemplateWordGenerator` | 模板渲染生成器 | 支持占位符和循环 |
+| `TemplateDocWordGenerator` | DOC 模板渲染生成器 | 支持文本占位符、嵌套字段和列表字段 |
 | `HslfPresentationGenerator` | PPT 格式生成器 | 标题页、文本页、表格页、图片页 |
 | `XslfPresentationGenerator` | PPTX 格式生成器 | 标题页、文本页、表格页、图片页 |
 | `OutlookMessageReader` | Outlook MSG 读取器 | 邮件主题、正文、附件摘要信息提取 |
@@ -1000,6 +1057,7 @@ mvn test
 # 运行指定测试类
 mvn -pl playground test -Dtest=WordBuilderTest
 mvn -pl playground test -Dtest=TemplateWordGeneratorTest
+mvn -pl playground -am test -Dtest=TemplateDocWordGeneratorTest -Dsurefire.failIfNoSpecifiedTests=false
 mvn -pl playground test -Dtest=WordGeneratorFactoryTest
 mvn -pl playground test -Dtest=ProgrammaticCadreDocumentWriterTest
 mvn -pl playground -am test -Dtest=XlsSalesReportDemoTest
