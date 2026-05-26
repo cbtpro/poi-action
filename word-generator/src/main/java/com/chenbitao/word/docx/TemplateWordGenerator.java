@@ -783,19 +783,113 @@ public class TemplateWordGenerator {
      * 判断 run 是否带有显式字符样式。
      *
      * @param run 文本 run
-     * @return 如果 run 设置了字体、字号、粗体、斜体、颜色或字符样式则返回 true
+     * @return 如果 run 设置了任一显式字符样式则返回 true
      */
     private boolean hasExplicitStyle(XWPFRun run) {
         if (!run.getCTR().isSetRPr()) {
             return false;
         }
         CTRPr rPr = run.getCTR().getRPr();
-        return rPr.isSetRFonts()
+        return hasNamedOrSizedStyle(rPr)
+                || hasShapeStyle(rPr)
+                || hasColorOrDecorationStyle(rPr)
+                || hasLayoutStyle(rPr)
+                || hasVisibilityOrLanguageStyle(rPr)
+                || hasAdvancedStyle(rPr);
+    }
+
+    /**
+     * 判断 run 属性是否包含字符样式、字体或字号设置。
+     *
+     * @param rPr run 属性
+     * @return 如果包含命名样式、字体或字号设置则返回 true
+     */
+    private boolean hasNamedOrSizedStyle(CTRPr rPr) {
+        return rPr.isSetRStyle()
+                || rPr.isSetRFonts()
                 || rPr.isSetSz()
-                || rPr.isSetB()
+                || rPr.isSetSzCs();
+    }
+
+    /**
+     * 判断 run 属性是否包含字形相关设置。
+     *
+     * @param rPr run 属性
+     * @return 如果包含粗体、斜体、大小写或字宽设置则返回 true
+     */
+    private boolean hasShapeStyle(CTRPr rPr) {
+        return rPr.isSetB()
+                || rPr.isSetBCs()
                 || rPr.isSetI()
-                || rPr.isSetColor()
-                || rPr.isSetRStyle();
+                || rPr.isSetICs()
+                || rPr.isSetCaps()
+                || rPr.isSetSmallCaps()
+                || rPr.isSetW();
+    }
+
+    /**
+     * 判断 run 属性是否包含颜色、线条或文字效果设置。
+     *
+     * @param rPr run 属性
+     * @return 如果包含颜色、装饰线、底纹或文字效果设置则返回 true
+     */
+    private boolean hasColorOrDecorationStyle(CTRPr rPr) {
+        return rPr.isSetColor()
+                || rPr.isSetHighlight()
+                || rPr.isSetU()
+                || rPr.isSetStrike()
+                || rPr.isSetDstrike()
+                || rPr.isSetShd()
+                || rPr.isSetBdr()
+                || rPr.isSetEffect()
+                || rPr.isSetEm();
+    }
+
+    /**
+     * 判断 run 属性是否包含字符版式或位置设置。
+     *
+     * @param rPr run 属性
+     * @return 如果包含间距、字距、位置、上下标或适配宽度设置则返回 true
+     */
+    private boolean hasLayoutStyle(CTRPr rPr) {
+        return rPr.isSetSpacing()
+                || rPr.isSetKern()
+                || rPr.isSetPosition()
+                || rPr.isSetVertAlign()
+                || rPr.isSetFitText()
+                || rPr.isSetEastAsianLayout()
+                || rPr.isSetSnapToGrid();
+    }
+
+    /**
+     * 判断 run 属性是否包含可见性、语言或书写方向设置。
+     *
+     * @param rPr run 属性
+     * @return 如果包含隐藏、语言、方向或复杂文种设置则返回 true
+     */
+    private boolean hasVisibilityOrLanguageStyle(CTRPr rPr) {
+        return rPr.isSetVanish()
+                || rPr.isSetWebHidden()
+                || rPr.isSetSpecVanish()
+                || rPr.isSetLang()
+                || rPr.isSetRtl()
+                || rPr.isSetCs();
+    }
+
+    /**
+     * 判断 run 属性是否包含较少见的特殊效果、校对、公式或修订设置。
+     *
+     * @param rPr run 属性
+     * @return 如果包含特殊效果、校对、公式或修订设置则返回 true
+     */
+    private boolean hasAdvancedStyle(CTRPr rPr) {
+        return rPr.isSetOutline()
+                || rPr.isSetShadow()
+                || rPr.isSetEmboss()
+                || rPr.isSetImprint()
+                || rPr.isSetNoProof()
+                || rPr.isSetOMath()
+                || rPr.isSetRPrChange();
     }
 
     /**

@@ -6,6 +6,8 @@ import org.apache.poi.xwpf.usermodel.XWPFRun;
 import org.apache.poi.xwpf.usermodel.XWPFTable;
 import org.junit.Test;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTFonts;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.STHighlightColor;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.STUnderline;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -183,6 +185,37 @@ public class TemplateWordGeneratorStyleTest {
                 assertEquals("宋体", renderedRun.getCTR().getRPr().getRFonts().getHAnsi());
                 assertEquals("宋体", renderedRun.getCTR().getRPr().getRFonts().getAscii());
                 assertEquals(12, renderedRun.getFontSize());
+            }
+        }
+    }
+
+    @Test
+    public void renderUsesRunWithExplicitNonFontStyleInsideSplitPlaceholder() throws Exception {
+        try (XWPFDocument document = new XWPFDocument();
+             ByteArrayOutputStream template = new ByteArrayOutputStream()) {
+            XWPFParagraph paragraph = document.createParagraph();
+            paragraph.createRun().setText("${na");
+            XWPFRun styledRun = paragraph.createRun();
+            styledRun.getCTR().addNewRPr().addNewU().setVal(STUnderline.SINGLE);
+            styledRun.getCTR().getRPr().addNewHighlight().setVal(STHighlightColor.YELLOW);
+            styledRun.setText("me}");
+            document.write(template);
+
+            TemplateWordGenerator generator =
+                    new TemplateWordGenerator(new ByteArrayInputStream(template.toByteArray()));
+            Map<String, Object> data = new HashMap<>();
+            data.put("name", "张三");
+
+            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            generator.render(data);
+            generator.save(output);
+
+            try (XWPFDocument rendered =
+                         new XWPFDocument(new ByteArrayInputStream(output.toByteArray()))) {
+                XWPFRun renderedRun = rendered.getParagraphArray(0).getRuns().get(1);
+                assertEquals("张三", renderedRun.getText(0));
+                assertEquals(STUnderline.SINGLE, renderedRun.getCTR().getRPr().getU().getVal());
+                assertEquals(STHighlightColor.YELLOW, renderedRun.getCTR().getRPr().getHighlight().getVal());
             }
         }
     }
