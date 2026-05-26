@@ -1,11 +1,11 @@
 package com.chenbitao.word.docx;
 
 import com.chenbitao.word.exception.WordException;
-import org.apache.poi.xwpf.usermodel.*;
 import org.apache.poi.util.Units;
-import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTTcPr;
-import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTVMerge;
-import org.openxmlformats.schemas.wordprocessingml.x2006.main.STMerge;
+import org.apache.poi.xwpf.usermodel.*;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.*;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -15,14 +15,8 @@ import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.Files;
-import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -167,14 +161,14 @@ public class TemplateWordGenerator {
         }
 
         Picture picture = singleImagePlaceholder(text, data);
-        clearRuns(runs);
-        XWPFRun firstRun = runs.get(0);
         if (picture != null) {
+            clearRuns(runs);
+            XWPFRun firstRun = runs.get(0);
             addPicture(firstRun, picture);
             return;
         }
 
-        setRunText(firstRun, renderText(text, data));
+        replaceTextInRuns(runs, data);
     }
 
     /**
@@ -203,7 +197,7 @@ public class TemplateWordGenerator {
      */
     private boolean isLoopRow(XWPFTableRow row) {
         for (XWPFTableCell cell : row.getTableCells()) {
-            String text = cell.getText();
+            String text = cellText(cell);
             if (text != null && LOOP_PLACEHOLDER_PATTERN.matcher(text).find()) {
                 return true;
             }
@@ -236,7 +230,7 @@ public class TemplateWordGenerator {
     private String getRowText(XWPFTableRow row) {
         StringBuilder sb = new StringBuilder();
         for (XWPFTableCell cell : row.getTableCells()) {
-            sb.append(cell.getText());
+            sb.append(cellText(cell));
         }
         return sb.toString();
     }
@@ -249,7 +243,7 @@ public class TemplateWordGenerator {
      * @return 如果单元格包含指定列表的循环占位符则返回true
      */
     private boolean isLoopCell(XWPFTableCell cell, String listName) {
-        String text = cell.getText();
+        String text = cellText(cell);
         return text != null && Pattern.compile("\\$\\{" + Pattern.quote(listName) + "\\.\\w+}")
                 .matcher(text)
                 .find();
@@ -290,19 +284,11 @@ public class TemplateWordGenerator {
      * @param text 要设置的文本内容
      */
     private void setCellText(XWPFTableCell cell, String text) {
-        while (!cell.getParagraphs().isEmpty()) {
-            cell.removeParagraph(0);
-        }
-
-        XWPFParagraph paragraph = cell.addParagraph();
-        XWPFRun run = paragraph.createRun();
-        String[] lines = text.split("\\n", -1);
-        for (int i = 0; i < lines.length; i++) {
-            if (i > 0) {
-                run.addBreak();
-            }
-            run.setText(lines[i]);
-        }
+        XWPFParagraph paragraph = firstParagraph(cell);
+        XWPFRun run = firstRun(paragraph);
+        removeExtraParagraphs(cell);
+        removeExtraRuns(paragraph);
+        setRunText(run, text);
     }
 
     /**
@@ -348,7 +334,7 @@ public class TemplateWordGenerator {
     private void renderLoopInCells(XWPFTableRow row, String listName, List<Map<String, Object>> list) {
         for (XWPFTableCell cell : row.getTableCells()) {
             if (isLoopCell(cell, listName)) {
-                setCellText(cell, renderLoopCell(cell.getText(), listName, list));
+                setCellText(cell, renderLoopCell(cellText(cell), listName, list));
             }
         }
     }
@@ -374,9 +360,10 @@ public class TemplateWordGenerator {
                 if (templateCell.getCTTc().isSetTcPr()) {
                     newCell.getCTTc().setTcPr((CTTcPr) templateCell.getCTTc().getTcPr().copy());
                 }
+                copyTextStyle(templateCell, newCell);
 
                 if (isLoopCell(templateCell, listName)) {
-                    setCellText(newCell, renderLoopText(templateCell.getText(), listName, item));
+                    setCellText(newCell, renderLoopText(cellText(templateCell), listName, item));
                 } else {
                     renderStaticCell(templateCell, newCell, offset);
                 }
@@ -396,17 +383,105 @@ public class TemplateWordGenerator {
      * @param offset 偏移量
      */
     private void renderStaticCell(XWPFTableCell templateCell, XWPFTableCell newCell, int offset) {
+        copyTextStyle(templateCell, newCell);
         STMerge.Enum templateMerge = getVerticalMerge(templateCell);
         if (STMerge.CONTINUE.equals(templateMerge)) {
             setCellText(newCell, "");
             return;
         }
 
-        String text = offset == 0 ? templateCell.getText() : "";
-        if (templateMerge != null || !templateCell.getText().isEmpty()) {
+        String templateText = cellText(templateCell);
+        String text = offset == 0 ? templateText : "";
+        if (templateMerge != null || !templateText.isEmpty()) {
             setVerticalMerge(newCell, offset == 0);
         }
         setCellText(newCell, text);
+    }
+
+    /**
+     * 读取单元格完整文本，并保留段落、run 内换行。
+     *
+     * @param cell 表格单元格
+     * @return 单元格文本
+     */
+    private String cellText(XWPFTableCell cell) {
+        StringBuilder text = new StringBuilder();
+        List<XWPFParagraph> paragraphs = cell.getParagraphs();
+        for (int i = 0; i < paragraphs.size(); i++) {
+            if (i > 0) {
+                text.append('\n');
+            }
+            text.append(paragraphText(paragraphs.get(i).getRuns()));
+        }
+        return text.toString();
+    }
+
+    /**
+     * 将模板单元格的段落样式和首个 run 样式复制到目标单元格。
+     *
+     * @param templateCell 模板单元格
+     * @param targetCell 目标单元格
+     */
+    private void copyTextStyle(XWPFTableCell templateCell, XWPFTableCell targetCell) {
+        XWPFParagraph sourceParagraph = firstParagraph(templateCell);
+        XWPFParagraph targetParagraph = firstParagraph(targetCell);
+        if (sourceParagraph.getCTP().isSetPPr()) {
+            targetParagraph.getCTP().setPPr((CTPPr) sourceParagraph.getCTP().getPPr().copy());
+        }
+
+        XWPFRun sourceRun = firstRun(sourceParagraph);
+        XWPFRun targetRun = firstRun(targetParagraph);
+        if (sourceRun.getCTR().isSetRPr()) {
+            targetRun.getCTR().setRPr((CTRPr) sourceRun.getCTR().getRPr().copy());
+        }
+    }
+
+    /**
+     * 获取单元格首个段落，不存在时创建一个段落。
+     *
+     * @param cell 表格单元格
+     * @return 首个段落
+     */
+    private XWPFParagraph firstParagraph(XWPFTableCell cell) {
+        if (cell.getParagraphs().isEmpty()) {
+            return cell.addParagraph();
+        }
+        return cell.getParagraphs().get(0);
+    }
+
+    /**
+     * 获取段落首个 run，不存在时创建一个 run。
+     *
+     * @param paragraph 段落
+     * @return 首个 run
+     */
+    private XWPFRun firstRun(XWPFParagraph paragraph) {
+        if (paragraph.getRuns().isEmpty()) {
+            return paragraph.createRun();
+        }
+        return paragraph.getRuns().get(0);
+    }
+
+    /**
+     * 删除首段之外的多余段落，避免重写单元格文本后出现残留内容。
+     *
+     * @param cell 表格单元格
+     */
+    private void removeExtraParagraphs(XWPFTableCell cell) {
+        while (cell.getParagraphs().size() > 1) {
+            cell.removeParagraph(1);
+        }
+    }
+
+    /**
+     * 删除首个 run 之外的多余 run，保留首个 run 的样式承载新文本。
+     *
+     * @param paragraph 段落
+     */
+    private void removeExtraRuns(XWPFParagraph paragraph) {
+        while (paragraph.getRuns().size() > 1) {
+            paragraph.removeRun(1);
+        }
     }
 
     /**
@@ -497,6 +572,13 @@ public class TemplateWordGenerator {
         return toListOfMaps((List<?>) value, listName);
     }
 
+    /**
+     * 将循环数据列表转换为字符串键 Map 列表。
+     *
+     * @param values 原始列表
+     * @param listName 列表名称，用于错误提示
+     * @return 字符串键 Map 列表
+     */
     private List<Map<String, Object>> toListOfMaps(List<?> values, String listName) {
         List<Map<String, Object>> result = new ArrayList<>(values.size());
         for (Object item : values) {
@@ -505,6 +587,13 @@ public class TemplateWordGenerator {
         return result;
     }
 
+    /**
+     * 将单条循环数据转换为字符串键 Map。
+     *
+     * @param item 单条循环数据
+     * @param listName 列表名称，用于错误提示
+     * @return 字符串键 Map
+     */
     private Map<String, Object> toStringKeyMap(Object item, String listName) {
         if (!(item instanceof Map)) {
             throw new WordException("循环数据必须是Map类型：" + listName, null);
@@ -552,12 +641,184 @@ public class TemplateWordGenerator {
     private String paragraphText(List<XWPFRun> runs) {
         StringBuilder text = new StringBuilder();
         for (XWPFRun run : runs) {
-            String runText = run.getText(0);
-            if (runText != null) {
-                text.append(runText);
+            text.append(runText(run));
+        }
+        return text.toString();
+    }
+
+    /**
+     * 替换段落内的文本占位符，并尽量保留原有 run 的样式和换行位置。
+     */
+    private void replaceTextInRuns(List<XWPFRun> runs, Map<String, Object> data) {
+        List<RunText> runTexts = runTexts(runs);
+        String paragraphText = joinRunTexts(runTexts);
+        StringBuilder[] newTexts = new StringBuilder[runs.size()];
+        for (int i = 0; i < newTexts.length; i++) {
+            newTexts[i] = new StringBuilder();
+        }
+
+        Matcher matcher = PLACEHOLDER_PATTERN.matcher(paragraphText);
+        int cursor = 0;
+        while (matcher.find()) {
+            appendOriginalText(newTexts, runTexts, cursor, matcher.start());
+            String key = matcher.group(1);
+            Object value = resolveValue(key, data);
+            if (value == null && !containsValue(key, data)) {
+                appendOriginalText(newTexts, runTexts, matcher.start(), matcher.end());
+            } else {
+                int runIndex = replacementRunIndex(runs, runTexts, matcher.start(), matcher.end());
+                newTexts[runIndex].append(formatValue(value));
             }
-            for (int i = 0; i < run.getCTR().sizeOfBrArray(); i++) {
+            cursor = matcher.end();
+        }
+        appendOriginalText(newTexts, runTexts, cursor, paragraphText.length());
+
+        for (int i = 0; i < runs.size(); i++) {
+            setRunText(runs.get(i), newTexts[i].toString());
+        }
+    }
+
+    /**
+     * 将 run 列表转换为带全段文本位置的 run 文本片段。
+     *
+     * @param runs 段落 run 列表
+     * @return run 文本片段列表
+     */
+    private List<RunText> runTexts(List<XWPFRun> runs) {
+        List<RunText> result = new ArrayList<>(runs.size());
+        int start = 0;
+        for (int i = 0; i < runs.size(); i++) {
+            String text = runText(runs.get(i));
+            int end = start + text.length();
+            result.add(new RunText(i, text, start, end));
+            start = end;
+        }
+        return result;
+    }
+
+    /**
+     * 拼接所有 run 文本片段，得到用于匹配占位符的完整段落文本。
+     *
+     * @param runTexts run 文本片段列表
+     * @return 完整段落文本
+     */
+    private String joinRunTexts(List<RunText> runTexts) {
+        StringBuilder text = new StringBuilder();
+        for (RunText runText : runTexts) {
+            text.append(runText.text);
+        }
+        return text.toString();
+    }
+
+    /**
+     * 将原始文本范围按所属 run 写回对应的新文本缓冲区。
+     *
+     * @param newTexts 每个 run 对应的新文本缓冲区
+     * @param runTexts run 文本片段列表
+     * @param start 原始文本起始位置
+     * @param end 原始文本结束位置
+     */
+    private void appendOriginalText(StringBuilder[] newTexts, List<RunText> runTexts, int start, int end) {
+        if (start >= end) {
+            return;
+        }
+
+        for (RunText runText : runTexts) {
+            int copyStart = Math.max(start, runText.start);
+            int copyEnd = Math.min(end, runText.end);
+            if (copyStart < copyEnd) {
+                newTexts[runText.index].append(runText.text, copyStart - runText.start, copyEnd - runText.start);
+            }
+        }
+    }
+
+    /**
+     * 查找指定文本位置所属的 run 索引。
+     *
+     * @param runTexts run 文本片段列表
+     * @param position 全段文本中的字符位置
+     * @return run 索引
+     */
+    private int runIndexAt(List<RunText> runTexts, int position) {
+        for (RunText runText : runTexts) {
+            if (position >= runText.start && position < runText.end) {
+                return runText.index;
+            }
+        }
+        return runTexts.isEmpty() ? 0 : runTexts.get(runTexts.size() - 1).index;
+    }
+
+    /**
+     * 选择承载占位符替换值的 run。
+     * 优先使用占位符覆盖范围内带显式样式的 run，避免替换值落到默认字体 run 上。
+     *
+     * @param runs 段落 run 列表
+     * @param runTexts run 文本片段列表
+     * @param start 占位符起始位置
+     * @param end 占位符结束位置
+     * @return 承载替换值的 run 索引
+     */
+    private int replacementRunIndex(List<XWPFRun> runs, List<RunText> runTexts, int start, int end) {
+        for (RunText runText : runTexts) {
+            if (overlaps(runText, start, end) && hasExplicitStyle(runs.get(runText.index))) {
+                return runText.index;
+            }
+        }
+        return runIndexAt(runTexts, start);
+    }
+
+    /**
+     * 判断 run 文本片段是否与指定文本范围有交集。
+     *
+     * @param runText run 文本片段
+     * @param start 文本范围起始位置
+     * @param end 文本范围结束位置
+     * @return 如果有交集则返回 true
+     */
+    private boolean overlaps(RunText runText, int start, int end) {
+        return Math.max(start, runText.start) < Math.min(end, runText.end);
+    }
+
+    /**
+     * 判断 run 是否带有显式字符样式。
+     *
+     * @param run 文本 run
+     * @return 如果 run 设置了字体、字号、粗体、斜体、颜色或字符样式则返回 true
+     */
+    private boolean hasExplicitStyle(XWPFRun run) {
+        if (!run.getCTR().isSetRPr()) {
+            return false;
+        }
+        CTRPr rPr = run.getCTR().getRPr();
+        return rPr.isSetRFonts()
+                || rPr.isSetSz()
+                || rPr.isSetB()
+                || rPr.isSetI()
+                || rPr.isSetColor()
+                || rPr.isSetRStyle();
+    }
+
+    /**
+     * 读取 run 的文本内容，并将 Word 的换行、回车、制表符转换为普通字符。
+     *
+     * @param run 文本 run
+     * @return run 文本
+     */
+    private String runText(XWPFRun run) {
+        StringBuilder text = new StringBuilder();
+        NodeList children = run.getCTR().getDomNode().getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            Node child = children.item(i);
+            String localName = child.getLocalName();
+            if ("t".equals(localName)) {
+                Node textNode = child.getFirstChild();
+                if (textNode != null && textNode.getNodeValue() != null) {
+                    text.append(textNode.getNodeValue());
+                }
+            } else if ("br".equals(localName) || "cr".equals(localName)) {
                 text.append('\n');
+            } else if ("tab".equals(localName)) {
+                text.append('\t');
             }
         }
         return text.toString();
@@ -605,6 +866,12 @@ public class TemplateWordGenerator {
         return String.valueOf(value);
     }
 
+    /**
+     * 将数组值按多行文本拼接。
+     *
+     * @param array 数组对象
+     * @return 多行文本
+     */
     private String joinArray(Object array) {
         StringBuilder text = new StringBuilder();
         int length = Array.getLength(array);
@@ -614,6 +881,12 @@ public class TemplateWordGenerator {
         return text.toString();
     }
 
+    /**
+     * 将可迭代值按多行文本拼接。
+     *
+     * @param values 可迭代值
+     * @return 多行文本
+     */
     private String joinValues(Iterable<?> values) {
         StringBuilder text = new StringBuilder();
         for (Object value : values) {
@@ -622,6 +895,12 @@ public class TemplateWordGenerator {
         return text.toString();
     }
 
+    /**
+     * 追加一行格式化后的值。
+     *
+     * @param text 文本构建器
+     * @param value 当前值
+     */
     private void appendValueLine(StringBuilder text, Object value) {
         if (text.length() > 0) {
             text.append('\n');
@@ -765,8 +1044,7 @@ public class TemplateWordGenerator {
      */
     private void clearRuns(List<XWPFRun> runs) {
         for (XWPFRun run : runs) {
-            run.setText("", 0);
-            run.getCTR().setBrArray(new org.openxmlformats.schemas.wordprocessingml.x2006.main.CTBr[0]);
+            clearRunText(run);
         }
     }
 
@@ -777,15 +1055,25 @@ public class TemplateWordGenerator {
      * @param text 要设置的文本内容
      */
     private void setRunText(XWPFRun run, String text) {
+        clearRunText(run);
         String[] lines = text.split("\\n", -1);
         for (int i = 0; i < lines.length; i++) {
             if (i > 0) {
                 run.addBreak();
-                run.setText(lines[i]);
-            } else {
-                run.setText(lines[i], 0);
             }
+            run.setText(lines[i]);
         }
+    }
+
+    /**
+     * 清空 run 中的文本、换行和回车节点，保留 run 的样式属性。
+     *
+     * @param run 文本 run
+     */
+    private void clearRunText(XWPFRun run) {
+        run.getCTR().setTArray(new CTText[0]);
+        run.getCTR().setBrArray(new CTBr[0]);
+        run.getCTR().setCrArray(new CTEmpty[0]);
     }
 
     /**
@@ -1068,6 +1356,31 @@ public class TemplateWordGenerator {
             case Document.PICTURE_TYPE_PNG:
             default:
                 return "png";
+        }
+    }
+
+    /**
+     * run 文本片段及其在完整段落文本中的位置。
+     */
+    private static class RunText {
+        private final int index;
+        private final String text;
+        private final int start;
+        private final int end;
+
+        /**
+         * 构造 run 文本片段。
+         *
+         * @param index run 在段落中的索引
+         * @param text run 文本
+         * @param start run 文本在完整段落文本中的起始位置
+         * @param end run 文本在完整段落文本中的结束位置
+         */
+        private RunText(int index, String text, int start, int end) {
+            this.index = index;
+            this.text = text;
+            this.start = start;
+            this.end = end;
         }
     }
 
